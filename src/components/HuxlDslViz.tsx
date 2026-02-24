@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import type { Dossier, WallSteepness } from '~/types/dossier'
 
 interface DslBlock {
@@ -6,6 +6,38 @@ interface DslBlock {
   name: string
   details: string[]
   connections: string[]
+  props: Record<string, string>
+}
+
+/** Known properties we display as icon+value badges */
+const PROP_ICONS: Record<string, { icon: string; label: string }> = {
+  // Runtime
+  container: { icon: '🐳', label: 'Container' },
+  vm: { icon: '🖥️', label: 'VM' },
+  serverless: { icon: '⚡', label: 'Serverless' },
+  // Language
+  rust: { icon: '🦀', label: 'Rust' },
+  typescript: { icon: '🟦', label: 'TypeScript' },
+  python: { icon: '🐍', label: 'Python' },
+  go: { icon: '🐹', label: 'Go' },
+  java: { icon: '☕', label: 'Java' },
+  // Backend / storage
+  postgres: { icon: '🐘', label: 'Postgres' },
+  redis: { icon: '🔴', label: 'Redis' },
+  sqlite: { icon: '📦', label: 'SQLite' },
+  s3: { icon: '🪣', label: 'S3' },
+}
+
+/** Extract key=value props from detail lines */
+function extractProps(details: string[]): Record<string, string> {
+  const props: Record<string, string> = {}
+  for (const line of details) {
+    const match = line.match(/^(runtime|language|backend)\s+(.+)$/)
+    if (match) {
+      props[match[1]] = match[2].trim()
+    }
+  }
+  return props
 }
 
 function parseDsl(raw: string): DslBlock[] {
@@ -19,14 +51,14 @@ function parseDsl(raw: string): DslBlock[] {
     const constraintMatch = line.match(/^constraint\s+(\w+)/)
 
     if (serviceMatch) {
-      if (current) blocks.push(current)
-      current = { type: 'service', name: serviceMatch[1], details: [], connections: [] }
+      if (current) { current.props = extractProps(current.details); blocks.push(current) }
+      current = { type: 'service', name: serviceMatch[1], details: [], connections: [], props: {} }
     } else if (storageMatch) {
-      if (current) blocks.push(current)
-      current = { type: 'storage', name: storageMatch[1], details: [], connections: [] }
+      if (current) { current.props = extractProps(current.details); blocks.push(current) }
+      current = { type: 'storage', name: storageMatch[1], details: [], connections: [], props: {} }
     } else if (constraintMatch) {
-      if (current) blocks.push(current)
-      current = { type: 'constraint', name: constraintMatch[1], details: [], connections: [] }
+      if (current) { current.props = extractProps(current.details); blocks.push(current) }
+      current = { type: 'constraint', name: constraintMatch[1], details: [], connections: [], props: {} }
     } else if (current) {
       const depMatch = line.match(/^(?:depends_on|uses|reads|writes)\s+(\w+)/)
       if (depMatch) {
@@ -37,18 +69,16 @@ function parseDsl(raw: string): DslBlock[] {
       }
     }
   }
-  if (current) blocks.push(current)
+  if (current) { current.props = extractProps(current.details); blocks.push(current) }
   return blocks
 }
 
-/** Convert raw DSL detail lines into YAML-like format for display */
-function detailsToYaml(details: string[]): string[] {
+/** Convert details to YAML for popover display */
+function detailsToYaml(details: string[]): string {
   return details.map((line) => {
-    // "key value" → "key: value"
     const kvMatch = line.match(/^(\w[\w_]*)\s+(.+)$/)
     if (kvMatch) {
       const [, key, val] = kvMatch
-      // Nested braces like "schema { foo, bar }" → multiline yaml
       if (val.includes('{')) {
         const inner = val.replace(/[{}]/g, '').trim()
         if (inner.includes(',')) {
@@ -57,15 +87,11 @@ function detailsToYaml(details: string[]): string[] {
         }
         return `${key}: ${inner}`
       }
-      // "key -> Type" (endpoint return type)
-      if (val.includes('->')) {
-        return `${key}: ${val.replace('->', '→').trim()}`
-      }
+      if (val.includes('->')) return `${key}: ${val.replace('->', '→').trim()}`
       return `${key}: ${val}`
     }
-    // Already formatted or standalone
     return line
-  })
+  }).join('\n')
 }
 
 const BLOCK_STYLES: Record<DslBlock['type'], { border: string; glow: string; icon: string; label: string }> = {
@@ -108,9 +134,29 @@ export function HuxlDslViz({ dossier }: { dossier: Dossier }) {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
               {blocks.map((block) => {
                 const s = BLOCK_STYLES[block.type]
-                const yamlLines = detailsToYaml(block.details)
-                const hasMore = yamlLines.length > 6
                 const isExpanded = expandedBlock === block.name
+
+                // Common property badges (runtime, language, backend)
+                const badges: Array<{ icon: string; label: string; value: string }> = []
+                for (const [propKey, propVal] of Object.entries(block.props)) {
+                  const iconInfo = PROP_ICONS[propVal.toLowerCase()]
+                  if (iconInfo) {
+                    badges.push({ ...iconInfo, value: propVal })
+                  } else {
+                    // Fallback: show text badge
+                    const fallbackIcon = propKey === 'runtime' ? '⚙️' : propKey === 'language' ? '📝' : propKey === 'backend' ? '💾' : '📋'
+                    badges.push({ icon: fallbackIcon, label: propKey, value: propVal })
+                  }
+                }
+
+                // Non-common details (everything except runtime/language/backend/depends_on)
+                const commonKeys = new Set(['runtime', 'language', 'backend'])
+                const otherDetails = block.details.filter((d) => {
+                  const key = d.match(/^(\w+)\s/)?.[1]
+                  return key ? !commonKeys.has(key) && !d.startsWith('depends_on') : true
+                })
+                const hasMore = otherDetails.length > 0
+
                 return (
                   <div
                     key={block.name}
@@ -120,7 +166,6 @@ export function HuxlDslViz({ dossier }: { dossier: Dossier }) {
                       position: 'relative',
                     }}
                   >
-                    {/* Base card */}
                     <div
                       style={{
                         background: '#06080e',
@@ -130,6 +175,7 @@ export function HuxlDslViz({ dossier }: { dossier: Dossier }) {
                         boxShadow: `0 0 20px ${s.glow}`,
                       }}
                     >
+                      {/* Type header */}
                       <div style={{
                         padding: '10px 14px',
                         borderBottom: `1px solid ${s.border}30`,
@@ -141,26 +187,44 @@ export function HuxlDslViz({ dossier }: { dossier: Dossier }) {
                         <span style={{ fontSize: '14px' }}>{s.icon}</span>
                         <span style={{ fontSize: '10px', color: s.border, fontWeight: 700, letterSpacing: '0.1em' }}>{s.label}</span>
                       </div>
+
+                      {/* Name + property badges */}
                       <div style={{ padding: '14px' }}>
-                        <div style={{ fontSize: '15px', fontWeight: 700, color: '#e0e8f8', marginBottom: '8px' }}>
+                        <div style={{ fontSize: '15px', fontWeight: 700, color: '#e0e8f8', marginBottom: badges.length > 0 ? '10px' : '0' }}>
                           {block.name}
                         </div>
-                        <pre style={{
-                          fontSize: '11px',
-                          color: '#9ab0cc',
-                          lineHeight: '1.7',
-                          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                          margin: 0,
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-word',
-                        }}>
-                          {yamlLines.slice(0, 6).join('\n')}
-                        </pre>
+
+                        {/* Icon badges for common properties */}
+                        {badges.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: hasMore ? '8px' : '0' }}>
+                            {badges.map((badge) => (
+                              <span
+                                key={badge.label}
+                                title={`${badge.label}: ${badge.value}`}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  padding: '3px 8px',
+                                  borderRadius: '4px',
+                                  background: 'rgba(122, 138, 170, 0.1)',
+                                  border: '1px solid rgba(122, 138, 170, 0.2)',
+                                  fontSize: '11px',
+                                  color: '#9ab0cc',
+                                }}
+                              >
+                                <span style={{ fontSize: '13px' }}>{badge.icon}</span>
+                                {badge.value}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* More button */}
                         {hasMore && (
                           <button
                             onClick={() => setExpandedBlock(isExpanded ? null : block.name)}
                             style={{
-                              marginTop: '6px',
                               fontSize: '11px',
                               color: '#00e5ff',
                               background: 'none',
@@ -172,10 +236,11 @@ export function HuxlDslViz({ dossier }: { dossier: Dossier }) {
                             onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline' }}
                             onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none' }}
                           >
-                            +{yamlLines.length - 6} more
+                            +{otherDetails.length} more
                           </button>
                         )}
                       </div>
+
                       {/* Connections */}
                       {block.connections.filter((c) => blockNames.has(c)).length > 0 && (
                         <div style={{ padding: '8px 14px', borderTop: `1px solid ${s.border}20`, display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -198,9 +263,15 @@ export function HuxlDslViz({ dossier }: { dossier: Dossier }) {
                       )}
                     </div>
 
-                    {/* Popover — expanded card floating on top */}
+                    {/* Popover with full YAML */}
                     {isExpanded && (
-                      <BlockPopover block={block} style={s} yamlLines={yamlLines} onClose={() => setExpandedBlock(null)} blockNames={blockNames} />
+                      <BlockPopover
+                        block={block}
+                        style={s}
+                        yaml={detailsToYaml(block.details)}
+                        onClose={() => setExpandedBlock(null)}
+                        blockNames={blockNames}
+                      />
                     )}
                   </div>
                 )
@@ -210,7 +281,7 @@ export function HuxlDslViz({ dossier }: { dossier: Dossier }) {
             {/* Raw DSL in collapsed code block */}
             <details style={{ marginTop: '8px' }}>
               <summary style={{ fontSize: '12px', color: '#546080', cursor: 'pointer', userSelect: 'none' }}>
-                Raw huxl-dsl
+                ▸ Raw huxl-dsl
               </summary>
               <pre style={{
                 marginTop: '8px',
@@ -309,13 +380,13 @@ export function HuxlDslViz({ dossier }: { dossier: Dossier }) {
 function BlockPopover({
   block,
   style: s,
-  yamlLines,
+  yaml,
   onClose,
   blockNames,
 }: {
   block: DslBlock
   style: { border: string; glow: string; icon: string; label: string }
-  yamlLines: string[]
+  yaml: string
   onClose: () => void
   blockNames: Set<string>
 }) {
@@ -361,7 +432,6 @@ function BlockPopover({
           to { opacity: 1; transform: translateX(-50%) scale(1); }
         }
       `}</style>
-      {/* Header */}
       <div style={{
         padding: '12px 16px',
         borderBottom: `1px solid ${s.border}30`,
@@ -376,19 +446,11 @@ function BlockPopover({
         </div>
         <button
           onClick={onClose}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#7a8aaa',
-            cursor: 'pointer',
-            fontSize: '16px',
-            padding: '2px 6px',
-          }}
+          style={{ background: 'none', border: 'none', color: '#7a8aaa', cursor: 'pointer', fontSize: '16px', padding: '2px 6px' }}
         >
           ✕
         </button>
       </div>
-      {/* Full content */}
       <div style={{ padding: '16px', maxHeight: '400px', overflowY: 'auto' }}>
         <div style={{ fontSize: '17px', fontWeight: 700, color: '#e0e8f8', marginBottom: '12px' }}>
           {block.name}
@@ -402,10 +464,9 @@ function BlockPopover({
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
         }}>
-          {yamlLines.join('\n')}
+          {yaml}
         </pre>
       </div>
-      {/* Connections */}
       {block.connections.filter((c) => blockNames.has(c)).length > 0 && (
         <div style={{ padding: '10px 16px', borderTop: `1px solid ${s.border}20`, display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {block.connections.filter((c) => blockNames.has(c)).map((c) => (
