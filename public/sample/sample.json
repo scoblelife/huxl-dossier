@@ -3,6 +3,8 @@
   "created_at": "2026-02-24T04:00:00Z",
   "updated_at": "2026-02-24T04:15:32Z",
   "tier": "A",
+  "huxl_dsl": "service rate_limiter {\n  runtime icp_canister\n  language motoko\n  depends_on bucket_store\n  endpoint check_limit: query -> RateLimitResult\n  endpoint configure: update -> ConfigResult\n  timer refill_buckets: interval 1s\n}\n\nstorage bucket_store {\n  backend stable_trie\n  schema {\n    key: Principal | IP | \"global\"\n    value: TokenBucket { tokens: Nat, last_refill: Timestamp }\n  }\n  persistence across_upgrades\n}\n\nconstraint performance {\n  target_rps 10000\n  p99_latency_ms 50\n  lookup_complexity O(1)\n  no_inter_canister_calls true\n}\n\nconstraint data_safety {\n  state_persistence stable_memory\n  upgrade_safe true\n  no_external_deps true\n}",
+  "concierge_prompt": "Build a production-grade rate limiter as an ICP canister using Motoko. Must support per-user (Principal), per-IP, and global rate limits using token bucket algorithm. All lookups must be O(1) via stable Trie — no Array.find in hot paths. State must persist across canister upgrades. No inter-canister calls in the check path. Include health and metrics endpoints. Target: 10k req/s sustained with <50ms p99.",
   "intent": {
     "raw": "Build me a rate limiter service that can handle 10k requests per second. It needs to support per-user limits, IP-based limits, and global limits. Should be deployed on ICP as a canister. Needs to be production-ready with monitoring.",
     "structured": {

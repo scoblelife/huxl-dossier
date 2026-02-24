@@ -33,6 +33,9 @@ export interface Dossier {
 
   tier?: QualityTier
 
+  huxl_dsl: string | null
+  concierge_prompt: string | null
+
   intent: {
     raw: string
     structured: null | {

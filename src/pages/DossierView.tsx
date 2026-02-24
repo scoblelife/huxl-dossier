@@ -2,19 +2,17 @@ import { useState } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import type { Dossier } from '~/types/dossier'
-import { BeforeAfterCard } from '~/components/BeforeAfterCard'
+import type { Dossier, StageId } from '~/types/dossier'
 import { StateMachine } from '~/components/StateMachine'
-import { PipelineDetail } from '~/components/PipelineDetail'
+import { HuxlDslViz } from '~/components/HuxlDslViz'
+import { StageModal } from '~/components/StageModal'
 import { ValidationResults } from '~/components/ValidationResults'
 import { Artifacts } from '~/components/Artifacts'
-
-type TabType = 'summary' | 'history' | 'validation' | 'artifacts'
 
 export function DossierView() {
   const params = useParams({ strict: false }) as { jobId: string }
   const jobId = params.jobId
-  const [activeTab, setActiveTab] = useState<TabType>('summary')
+  const [selectedStage, setSelectedStage] = useState<StageId | null>(null)
 
   const { data: dossier, isLoading } = useQuery<Dossier>({
     queryKey: ['dossier', jobId],
@@ -33,6 +31,8 @@ export function DossierView() {
       if (!data.gate_events) {
         data.gate_events = []
       }
+      if (data.huxl_dsl === undefined) data.huxl_dsl = null
+      if (data.concierge_prompt === undefined) data.concierge_prompt = null
       // Normalize pipeline_timeline: old "pass" field → "stage"
       if (data.pipeline_timeline) {
         for (const entry of data.pipeline_timeline) {
@@ -66,16 +66,13 @@ export function DossierView() {
     )
   }
 
-  const tabs: { id: TabType; label: string }[] = [
-    { id: 'summary', label: 'Summary' },
-    { id: 'history', label: 'History' },
-    { id: 'validation', label: 'Validation' },
-    { id: 'artifacts', label: 'Artifacts' },
-  ]
+  const handleStageClick = (stage: StageId) => {
+    setSelectedStage((prev) => (prev === stage ? null : stage))
+  }
 
   return (
     <div className="min-h-screen w-full" style={{ background: '#06080e' }}>
-      {/* Sticky Header + Tabs */}
+      {/* Sticky Header */}
       <div style={{
         position: 'sticky',
         top: 0,
@@ -83,55 +80,49 @@ export function DossierView() {
         background: '#06080e',
         borderBottom: '1px solid #1c2640',
       }}>
-        {/* Header row: Back · Run ID · Status · Duration */}
         <div style={{ padding: '16px 32px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* Back link */}
-          <Link 
-            to="/" 
-            style={{ 
-              color: '#7a8aaa', 
-              fontSize: '13px', 
-              textDecoration: 'none', 
-              display: 'inline-flex', 
-              alignItems: 'center', 
+          <Link
+            to="/"
+            style={{
+              color: '#7a8aaa',
+              fontSize: '13px',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
               gap: '6px',
               fontWeight: 500,
             }}
           >
             ← Back
           </Link>
-          
+
           <div style={{ width: '1px', height: '16px', background: '#1c2640' }} />
-          
-          {/* Run ID */}
+
           <div>
             <span style={{ color: '#7a8aaa', fontSize: '13px', marginRight: '6px' }}>Run</span>
-            <code style={{ 
-              color: '#00e5ff', 
-              fontFamily: 'monospace', 
+            <code style={{
+              color: '#00e5ff',
+              fontFamily: 'monospace',
               fontSize: '13px',
               fontWeight: 600,
             }}>
               {dossier.job_id.slice(0, 8)}
             </code>
           </div>
-          
+
           <div style={{ width: '1px', height: '16px', background: '#1c2640' }} />
-          
-          {/* Status badge */}
+
           {getStatusBadge(dossier.state, dossier.current_stage)}
-          
+
           <div style={{ width: '1px', height: '16px', background: '#1c2640' }} />
-          
-          {/* Duration */}
+
           <div style={{ fontSize: '13px', color: '#7a8aaa' }}>
             <span style={{ marginRight: '6px' }}>Duration:</span>
             <span style={{ color: '#e0e8f8', fontWeight: 600 }}>
               {getDuration(dossier.created_at, dossier.updated_at)}
             </span>
           </div>
-          
-          {/* Cost (if available) */}
+
           {dossier.conformance_bundle && (
             <>
               <div style={{ width: '1px', height: '16px', background: '#1c2640' }} />
@@ -144,45 +135,9 @@ export function DossierView() {
             </>
           )}
         </div>
-        
-        {/* Tab bar directly below, same sticky unit */}
-        <div style={{ padding: '0 32px', display: 'flex', gap: '0' }}>
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: '14px 24px',
-                fontSize: '13px',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: activeTab === tab.id ? '#00e5ff' : '#7a8aaa',
-                borderBottom: activeTab === tab.id ? '2px solid #00e5ff' : '2px solid transparent',
-                boxShadow: activeTab === tab.id ? '0 2px 8px rgba(0, 229, 255, 0.3)' : 'none',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                if (activeTab !== tab.id) {
-                  e.currentTarget.style.color = '#a0b0d0'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (activeTab !== tab.id) {
-                  e.currentTarget.style.color = '#7a8aaa'
-                }
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
       </div>
 
-      {/* Content area with max width container */}
+      {/* Content */}
       <div
         style={{
           maxWidth: '1200px',
@@ -193,32 +148,60 @@ export function DossierView() {
         }}
         className="sm:px-8"
       >
-        {/* Main content area */}
-        <div className="py-8 space-y-12" style={{ paddingTop: '32px', paddingBottom: '48px' }}>
-          {/* Summary Tab */}
-          {activeTab === 'summary' && (
-            <>
-              <BeforeAfterCard dossier={dossier} />
-              <StateMachine dossier={dossier} />
-            </>
-          )}
+        <div style={{ paddingTop: '32px', paddingBottom: '48px', display: 'flex', flexDirection: 'column', gap: '48px' }}>
+          {/* Customer Intent (brief) */}
+          <div>
+            <h3 style={{ color: '#7a8aaa', fontSize: '13px', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '16px', textTransform: 'uppercase' }}>
+              CUSTOMER INTENT
+            </h3>
+            <blockquote style={{
+              borderLeft: '3px solid #00e5ff',
+              paddingLeft: '20px',
+              color: '#e0e8f8',
+              fontSize: '15px',
+              lineHeight: '1.7',
+              fontStyle: 'italic',
+              margin: 0,
+            }}>
+              "{dossier.intent.raw}"
+            </blockquote>
+          </div>
 
-          {/* History Tab */}
-          {activeTab === 'history' && (
-            <PipelineDetail dossier={dossier} />
-          )}
+          {/* Pipeline overview — always visible, clickable stages */}
+          <div>
+            <div style={{ marginBottom: '8px', fontSize: '12px', color: '#546080', textAlign: 'center' }}>
+              Click a stage to view details
+            </div>
+            <StateMachine
+              dossier={dossier}
+              onStageClick={handleStageClick}
+              selectedStage={selectedStage}
+            />
+          </div>
 
-          {/* Validation Tab */}
-          {activeTab === 'validation' && (
+          {/* huxl-dsl visualization + constraint profile */}
+          <HuxlDslViz dossier={dossier} />
+
+          {/* Validation results */}
+          {dossier.validation_results.length > 0 && (
             <ValidationResults dossier={dossier} />
           )}
 
-          {/* Artifacts Tab */}
-          {activeTab === 'artifacts' && (
+          {/* Artifacts */}
+          {(dossier.artifacts.repo_url || dossier.artifacts.files.length > 0) && (
             <Artifacts dossier={dossier} />
           )}
         </div>
       </div>
+
+      {/* Stage detail modal */}
+      {selectedStage && (
+        <StageModal
+          dossier={dossier}
+          stage={selectedStage}
+          onClose={() => setSelectedStage(null)}
+        />
+      )}
     </div>
   )
 }
@@ -232,17 +215,17 @@ function getStatusBadge(state: string, currentStage: string | null) {
     Failed: { bg: 'rgba(255, 56, 56, 0.15)', color: '#ff3838', border: 'rgba(255, 56, 56, 0.4)' },
     Rejected: { bg: 'rgba(255, 56, 56, 0.15)', color: '#ff3838', border: 'rgba(255, 56, 56, 0.4)' },
   }
-  
+
   const s = styles[state] || { bg: 'rgba(122, 138, 170, 0.15)', color: '#7a8aaa', border: 'rgba(122, 138, 170, 0.4)' }
-  const icons: Record<string, string> = { 
-    Complete: '✓', 
-    Concierge: '●', 
-    Forging: '⚡', 
+  const icons: Record<string, string> = {
+    Complete: '✓',
+    Concierge: '●',
+    Forging: '⚡',
     Inspecting: '◉',
     Failed: '✕',
     Rejected: '✕',
   }
-  
+
   return (
     <span
       className={['Concierge', 'Forging', 'Inspecting'].includes(state) ? 'animate-pulse' : ''}
@@ -273,7 +256,7 @@ function getDuration(start: string, end: string): string {
   const seconds = Math.floor(ms / 1000)
   const minutes = Math.floor(seconds / 60)
   const hours = Math.floor(minutes / 60)
-  
+
   if (hours > 0) return `${hours}h ${minutes % 60}m`
   if (minutes > 0) return `${minutes}m ${seconds % 60}s`
   return `${seconds}s`

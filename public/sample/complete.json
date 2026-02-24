@@ -3,6 +3,8 @@
   "created_at": "2026-02-23T18:30:00Z",
   "updated_at": "2026-02-23T19:42:18Z",
   "tier": "B",
+  "huxl_dsl": "service todo_api {\n  runtime icp_canister\n  language motoko\n  depends_on todo_store\n  endpoint create_todo: update -> Todo\n  endpoint get_todos: query -> [Todo]\n  endpoint update_todo: update -> Todo\n  endpoint delete_todo: update -> Bool\n}\n\nstorage todo_store {\n  backend stable_hashmap\n  schema {\n    key: TodoId\n    value: Todo { title: Text, description: Text, completed: Bool }\n  }\n  persistence across_upgrades\n}",
+  "concierge_prompt": "Simple CRUD REST API for a todo list on ICP. Each todo has title, description, and completion status. Use stable HashMap for persistence across upgrades. Standard REST patterns: POST /todos, GET /todos, PUT /todos/:id, DELETE /todos/:id.",
   "intent": {
     "raw": "I need a simple REST API for a todo list. Users should be able to create, read, update, and delete todos. Each todo has a title, description, and completion status. Deploy on ICP.",
     "structured": {

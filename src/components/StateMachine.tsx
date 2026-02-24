@@ -40,7 +40,7 @@ const ACTOR_ZONES: Array<{
   },
 ]
 
-export function StateMachine({ dossier }: { dossier: Dossier }) {
+export function StateMachine({ dossier, onStageClick, selectedStage }: { dossier: Dossier; onStageClick?: (stage: StageId) => void; selectedStage?: StageId | null }) {
   const completedStages = new Set(
     dossier.pipeline_timeline
       .filter((t) => t.result === 'Ok')
@@ -131,7 +131,9 @@ export function StateMachine({ dossier }: { dossier: Dossier }) {
                           isComplete={isComplete}
                           isCurrent={isCurrent}
                           isFailed={isFailed}
+                          isSelected={selectedStage === stage.id}
                           accentColor={zone.color}
+                          onClick={onStageClick ? () => onStageClick(stage.id) : undefined}
                         />
                         {idx < zoneStages.length - 1 && (
                           <Arrow
@@ -294,13 +296,17 @@ function StageNode({
   isComplete,
   isCurrent,
   isFailed,
+  isSelected,
   accentColor,
+  onClick,
 }: {
   stage: StageInfo
   isComplete: boolean
   isCurrent: boolean
   isFailed: boolean
+  isSelected?: boolean
   accentColor: string
+  onClick?: () => void
 }) {
   let bgColor = 'rgba(122, 138, 170, 0.15)'
   let borderColor = 'rgba(122, 138, 170, 0.3)'
@@ -326,15 +332,31 @@ function StageNode({
     icon = '✕'
   }
 
+  const isClickable = !!onClick
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '80px', minHeight: '110px' }}>
+    <div
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        width: '80px',
+        minHeight: '110px',
+        cursor: isClickable ? 'pointer' : 'default',
+        transition: 'transform 0.15s ease',
+        ...(isSelected ? { transform: 'scale(1.1)' } : {}),
+      }}
+      onMouseEnter={(e) => { if (isClickable) e.currentTarget.style.transform = 'scale(1.08)' }}
+      onMouseLeave={(e) => { if (isClickable) e.currentTarget.style.transform = isSelected ? 'scale(1.1)' : 'scale(1)' }}
+    >
       <div
         className={glowClass}
         style={{
           width: '42px',
           height: '42px',
           borderRadius: '50%',
-          border: `2px solid ${borderColor}`,
+          border: `2px solid ${isSelected ? '#00e5ff' : borderColor}`,
           background: bgColor,
           display: 'flex',
           alignItems: 'center',
@@ -342,6 +364,8 @@ function StageNode({
           fontSize: '16px',
           color: textColor,
           flexShrink: 0,
+          boxShadow: isSelected ? '0 0 16px rgba(0, 229, 255, 0.5)' : 'none',
+          transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
         }}
       >
         {icon}
