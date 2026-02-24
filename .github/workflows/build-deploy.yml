@@ -1,0 +1,38 @@
+name: Build & Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: depot-ubuntu-22.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: depot/setup-action@v1
+      
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - uses: depot/build-push-action@v1
+        with:
+          project: mpvz0dt7h5
+          push: true
+          tags: ghcr.io/scoblelife/huxl-dossier:${{ github.sha }},ghcr.io/scoblelife/huxl-dossier:latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Railway
+        run: |
+          curl -X POST "https://backboard.railway.com/graphql/v2" \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"mutation { serviceInstanceRedeploy(serviceId: \"72d6cfc5-820d-4d8d-b37f-340ff526f6c3\", environmentId: \"86912529-2d9c-415e-9f34-a21b37e8f4fb\") }"}'

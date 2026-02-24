@@ -1,10 +1,14 @@
 import { createRootRoute, createRoute, Outlet } from '@tanstack/react-router'
+import { lazy } from 'react'
 import { DossierList } from './pages/DossierList'
 import { DossierView } from './pages/DossierView'
 
+const ConciergeView = lazy(() => import('./pages/ConciergeView'))
+const DelegateView = lazy(() => import('./pages/DelegateView'))
+
 const rootRoute = createRootRoute({
   component: () => (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="min-h-screen bg-bg text-text hud-grid">
       <Outlet />
     </div>
   ),
@@ -22,4 +26,16 @@ const dossierRoute = createRoute({
   component: DossierView,
 })
 
-export const routeTree = rootRoute.addChildren([indexRoute, dossierRoute])
+const conciergeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/concierge/$projectId',
+  component: ConciergeView,
+})
+
+const delegateRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/delegate/$token',
+  component: DelegateView,
+})
+
+export const routeTree = rootRoute.addChildren([indexRoute, dossierRoute, conciergeRoute, delegateRoute])
