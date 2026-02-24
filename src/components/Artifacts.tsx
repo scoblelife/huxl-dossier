@@ -63,8 +63,8 @@ function ConformanceBundle({ bundle }: { bundle: NonNullable<Dossier['conformanc
           <div className="text-2xl font-bold" style={{ color: '#e0e8f8' }}>{bundle.total_attempts}</div>
         </div>
         <div className="rounded p-4" style={{ background: '#06080e' }}>
-          <div className="text-sm mb-1" style={{ color: '#546080' }}>Passes Completed</div>
-          <div className="text-2xl font-bold" style={{ color: '#e0e8f8' }}>{bundle.passes_completed.length}</div>
+          <div className="text-sm mb-1" style={{ color: '#546080' }}>Stages Completed</div>
+          <div className="text-2xl font-bold" style={{ color: '#e0e8f8' }}>{bundle.stages_completed.length}</div>
         </div>
         <div className="rounded p-4" style={{ background: '#06080e' }}>
           <div className="text-sm mb-1" style={{ color: '#546080' }}>Total Cost</div>
@@ -73,15 +73,15 @@ function ConformanceBundle({ bundle }: { bundle: NonNullable<Dossier['conformanc
       </div>
       
       <div className="space-y-2">
-        <div className="text-sm font-medium mb-2" style={{ color: '#546080' }}>Pass Audit Trail</div>
-        {bundle.passes_completed.map((pass) => (
-          <div key={pass.pass} className="flex items-center justify-between rounded px-4 py-2" style={{ background: '#06080e' }}>
-            <code className="text-sm" style={{ color: '#e0e8f8' }}>{pass.pass}</code>
+        <div className="text-sm font-medium mb-2" style={{ color: '#546080' }}>Stage Audit Trail</div>
+        {bundle.stages_completed.map((entry) => (
+          <div key={entry.stage} className="flex items-center justify-between rounded px-4 py-2" style={{ background: '#06080e' }}>
+            <code className="text-sm" style={{ color: '#e0e8f8' }}>{entry.stage}</code>
             <div className="flex items-center gap-4 text-sm" style={{ color: '#546080' }}>
-              <span>{pass.attempts} attempt{pass.attempts !== 1 ? 's' : ''}</span>
-              {pass.backpressure_events > 0 && (
+              <span>{entry.attempts} attempt{entry.attempts !== 1 ? 's' : ''}</span>
+              {entry.gate_events > 0 && (
                 <span style={{ color: '#ff9500' }}>
-                  {pass.backpressure_events} backpressure event{pass.backpressure_events !== 1 ? 's' : ''}
+                  {entry.gate_events} gate event{entry.gate_events !== 1 ? 's' : ''}
                 </span>
               )}
             </div>

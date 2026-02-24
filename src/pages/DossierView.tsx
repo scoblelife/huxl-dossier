@@ -25,7 +25,23 @@ export function DossierView() {
         : `/api/dossier/${jobId}.json`
       const response = await fetch(url)
       if (!response.ok) throw new Error('Failed to fetch dossier')
-      return response.json()
+      const data = await response.json()
+      // Normalize legacy fields
+      if (data.current_pass !== undefined && data.current_stage === undefined) {
+        data.current_stage = data.current_pass
+      }
+      if (!data.gate_events) {
+        data.gate_events = []
+      }
+      // Normalize pipeline_timeline: old "pass" field → "stage"
+      if (data.pipeline_timeline) {
+        for (const entry of data.pipeline_timeline) {
+          if (entry.pass && !entry.stage) {
+            entry.stage = entry.pass
+          }
+        }
+      }
+      return data
     },
     refetchInterval: 3000,
   })
@@ -103,7 +119,7 @@ export function DossierView() {
           <div style={{ width: '1px', height: '16px', background: '#1c2640' }} />
           
           {/* Status badge */}
-          {getStatusBadge(dossier.state, dossier.current_pass)}
+          {getStatusBadge(dossier.state, dossier.current_stage)}
           
           <div style={{ width: '1px', height: '16px', background: '#1c2640' }} />
           
@@ -207,25 +223,29 @@ export function DossierView() {
   )
 }
 
-function getStatusBadge(state: string, currentPass: string | null) {
+function getStatusBadge(state: string, currentStage: string | null) {
   const styles: Record<string, { bg: string; color: string; border: string; glow?: string }> = {
     Complete: { bg: 'rgba(0, 223, 162, 0.15)', color: '#00dfa2', border: 'rgba(0, 223, 162, 0.4)' },
-    Denoising: { bg: 'rgba(0, 229, 255, 0.15)', color: '#00e5ff', border: 'rgba(0, 229, 255, 0.4)', glow: '0 0 10px rgba(0, 229, 255, 0.2)' },
-    Backpressure: { bg: 'rgba(255, 149, 0, 0.15)', color: '#ff9500', border: 'rgba(255, 149, 0, 0.4)', glow: '0 0 10px rgba(255, 149, 0, 0.2)' },
+    Concierge: { bg: 'rgba(0, 229, 255, 0.15)', color: '#00e5ff', border: 'rgba(0, 229, 255, 0.4)', glow: '0 0 10px rgba(0, 229, 255, 0.2)' },
+    Forging: { bg: 'rgba(255, 149, 0, 0.15)', color: '#ff9500', border: 'rgba(255, 149, 0, 0.4)', glow: '0 0 10px rgba(255, 149, 0, 0.2)' },
+    Inspecting: { bg: 'rgba(0, 223, 162, 0.15)', color: '#00dfa2', border: 'rgba(0, 223, 162, 0.4)', glow: '0 0 10px rgba(0, 223, 162, 0.2)' },
     Failed: { bg: 'rgba(255, 56, 56, 0.15)', color: '#ff3838', border: 'rgba(255, 56, 56, 0.4)' },
+    Rejected: { bg: 'rgba(255, 56, 56, 0.15)', color: '#ff3838', border: 'rgba(255, 56, 56, 0.4)' },
   }
   
   const s = styles[state] || { bg: 'rgba(122, 138, 170, 0.15)', color: '#7a8aaa', border: 'rgba(122, 138, 170, 0.4)' }
   const icons: Record<string, string> = { 
     Complete: '✓', 
-    Denoising: '●', 
-    Backpressure: '⚠', 
-    Failed: '✕' 
+    Concierge: '●', 
+    Forging: '⚡', 
+    Inspecting: '◉',
+    Failed: '✕',
+    Rejected: '✕',
   }
   
   return (
     <span
-      className={state === 'Denoising' ? 'animate-pulse' : ''}
+      className={['Concierge', 'Forging', 'Inspecting'].includes(state) ? 'animate-pulse' : ''}
       style={{
         padding: '6px 12px',
         borderRadius: '6px',

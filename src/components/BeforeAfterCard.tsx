@@ -7,8 +7,8 @@ export function BeforeAfterCard({ dossier }: { dossier: Dossier }) {
     return null
   }
 
-  const passCount = dossier.pipeline_timeline.filter(t => t.ended_at && t.result === 'Ok').length
-  const totalPasses = 6
+  const stageCount = dossier.pipeline_timeline.filter(t => t.ended_at && t.result === 'Ok').length
+  const totalStages = 8
   
   const bedrockPassed = dossier.bedrock_checks 
     ? Object.values(dossier.bedrock_checks).filter(Boolean).length
@@ -168,23 +168,23 @@ export function BeforeAfterCard({ dossier }: { dossier: Dossier }) {
                   gap: '8px',
                   padding: '8px 16px',
                   borderRadius: '6px',
-                  background: dossier.state === 'Denoising' ? 'rgba(0, 229, 255, 0.15)' : 'rgba(0, 223, 162, 0.15)',
-                  border: `1px solid ${dossier.state === 'Denoising' ? 'rgba(0, 229, 255, 0.4)' : 'rgba(0, 223, 162, 0.4)'}`,
+                  background: dossier.state === 'Complete' ? 'rgba(0, 223, 162, 0.15)' : 'rgba(0, 229, 255, 0.15)',
+                  border: `1px solid ${dossier.state === 'Complete' ? 'rgba(0, 223, 162, 0.4)' : 'rgba(0, 229, 255, 0.4)'}`,
                   marginBottom: '12px',
                 }}
-                className={dossier.state === 'Denoising' ? 'animate-pulse' : ''}
+                className={dossier.state !== 'Complete' && dossier.state !== 'Failed' ? 'animate-pulse' : ''}
               >
                 <div
                   style={{
                     width: '8px',
                     height: '8px',
                     borderRadius: '50%',
-                    background: dossier.state === 'Denoising' ? '#00e5ff' : '#00dfa2',
+                    background: dossier.state === 'Complete' ? '#00dfa2' : '#00e5ff',
                   }}
                 />
                 <span
                   style={{
-                    color: dossier.state === 'Denoising' ? '#00e5ff' : '#00dfa2',
+                    color: dossier.state === 'Complete' ? '#00dfa2' : '#00e5ff',
                     fontSize: '14px',
                     fontWeight: 700,
                     textTransform: 'uppercase',
@@ -195,9 +195,9 @@ export function BeforeAfterCard({ dossier }: { dossier: Dossier }) {
                 </span>
               </div>
               
-              {dossier.current_pass && (
+              {dossier.current_stage && (
                 <div style={{ fontSize: '15px', color: '#e0e8f8', lineHeight: '1.7' }}>
-                  Pass {passCount} of {totalPasses}
+                  Stage {stageCount} of {totalStages}
                 </div>
               )}
             </div>

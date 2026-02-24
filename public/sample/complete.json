@@ -2,26 +2,15 @@
   "job_id": "a3d9f2e8-1b4c-4d7e-9a2f-8e5c6d4b3a1c",
   "created_at": "2026-02-23T18:30:00Z",
   "updated_at": "2026-02-23T19:42:18Z",
+  "tier": "B",
   "intent": {
     "raw": "I need a simple REST API for a todo list. Users should be able to create, read, update, and delete todos. Each todo has a title, description, and completion status. Deploy on ICP.",
     "structured": {
       "summary": "CRUD REST API for todo list management on ICP",
       "acceptance_criteria": [
-        {
-          "id": "AC-1",
-          "description": "API supports create, read, update, delete operations",
-          "verifiable_as": "Integration tests cover all CRUD operations with 200/201/204 responses"
-        },
-        {
-          "id": "AC-2",
-          "description": "Todos persist across canister upgrades",
-          "verifiable_as": "Upgrade test shows todos preserved in stable storage"
-        },
-        {
-          "id": "AC-3",
-          "description": "API is accessible via HTTP",
-          "verifiable_as": "curl requests succeed against deployed canister"
-        }
+        { "id": "AC-1", "description": "API supports create, read, update, delete operations", "verifiable_as": "Integration tests cover all CRUD operations with 200/201/204 responses" },
+        { "id": "AC-2", "description": "Todos persist across canister upgrades", "verifiable_as": "Upgrade test shows todos preserved in stable storage" },
+        { "id": "AC-3", "description": "API is accessible via HTTP", "verifiable_as": "curl requests succeed against deployed canister" }
       ],
       "domain_constraints": [
         "Must use ICP HTTP outcalls for REST interface",
@@ -50,34 +39,102 @@
     }
   },
   "state": "Complete",
-  "current_pass": null,
+  "current_stage": null,
   "current_attempt": 0,
   "pipeline_timeline": [
     {
-      "pass": "Groom",
+      "stage": "Prospecting",
+      "attempt": 1,
+      "started_at": "2026-02-23T18:28:00Z",
+      "ended_at": "2026-02-23T18:29:00Z",
+      "result": "Ok",
+      "artifact_summary": "Customer inbound via API. Todo list project intake.",
+      "tokens_in": 400,
+      "tokens_out": 600,
+      "model": "claude-sonnet-4-6",
+      "cost_usd": 0.01,
+      "context_additions": []
+    },
+    {
+      "stage": "Qualifying",
+      "attempt": 1,
+      "started_at": "2026-02-23T18:29:05Z",
+      "ended_at": "2026-02-23T18:30:10Z",
+      "result": "Ok",
+      "artifact_summary": "Simple CRUD project, Tier B complexity. Qualified.",
+      "tokens_in": 800,
+      "tokens_out": 1200,
+      "model": "claude-sonnet-4-6",
+      "cost_usd": 0.02,
+      "context_additions": []
+    },
+    {
+      "stage": "Discovering",
       "attempt": 1,
       "started_at": "2026-02-23T18:30:20Z",
       "ended_at": "2026-02-23T18:32:15Z",
       "result": "Ok",
-      "artifact_summary": "TLA+ spec with 12 states, 2 invariants. Complexity: 8/20. Simple CRUD state machine.",
+      "artifact_summary": "Discovery Brief: Simple CRUD API, no auth, HTTP interface via IC HTTP gateway. Complexity: 8/20.",
       "tokens_in": 1800,
       "tokens_out": 5200,
       "model": "claude-sonnet-4-6",
       "cost_usd": 0.06,
       "context_additions": [
-        {
-          "kind": "Artifact",
-          "content": "Spec models: Todo CRUD operations, stable storage persistence"
-        }
+        { "kind": "DiscoveryBrief", "content": "Todo CRUD: stable storage, HTTP interface, no auth" }
       ]
     },
     {
-      "pass": "IntentDenoise",
+      "stage": "Scoping",
       "attempt": 1,
       "started_at": "2026-02-23T18:32:20Z",
       "ended_at": "2026-02-23T18:33:45Z",
       "result": "Ok",
-      "artifact_summary": "Clarified: Simple CRUD API, no authentication, HTTP interface via IC HTTP gateway",
+      "artifact_summary": "huxl-dsl: Single Motoko canister with stable HashMap, HTTP interface, auto-incrementing ID.",
+      "tokens_in": 2400,
+      "tokens_out": 6800,
+      "model": "claude-sonnet-4-6",
+      "cost_usd": 0.09,
+      "context_additions": [
+        { "kind": "Artifact", "content": "huxl-dsl: Motoko canister, StableHashMap<Nat, Todo>, http_request handler" }
+      ]
+    },
+    {
+      "stage": "Forging",
+      "attempt": 1,
+      "started_at": "2026-02-23T18:36:15Z",
+      "ended_at": "2026-02-23T19:15:20Z",
+      "result": "Ok",
+      "artifact_summary": "Generated Motoko canister with CRUD functions, stable storage, HTTP request routing. All unit tests pass.",
+      "tokens_in": 9000,
+      "tokens_out": 21300,
+      "model": "claude-sonnet-4-6",
+      "cost_usd": 0.31,
+      "context_additions": [
+        { "kind": "Artifact", "content": "Implementation: 4 CRUD functions, http_request router, JSON serialization, integration tested" }
+      ]
+    },
+    {
+      "stage": "Delivering",
+      "attempt": 1,
+      "started_at": "2026-02-23T19:15:25Z",
+      "ended_at": "2026-02-23T19:35:10Z",
+      "result": "Ok",
+      "artifact_summary": "Inspector validated: all acceptance criteria met, no regressions, adversarial tests passed (concurrent updates, malformed inputs, 100 req/s stress).",
+      "tokens_in": 4100,
+      "tokens_out": 9200,
+      "model": "claude-sonnet-4-6",
+      "cost_usd": 0.14,
+      "context_additions": [
+        { "kind": "Artifact", "content": "Inspection passed: All AC met, no regressions" }
+      ]
+    },
+    {
+      "stage": "Tempering",
+      "attempt": 1,
+      "started_at": "2026-02-23T19:35:15Z",
+      "ended_at": "2026-02-23T19:40:00Z",
+      "result": "Ok",
+      "artifact_summary": "Post-delivery hardening: query call optimization, debug logging removed, stable storage write batching.",
       "tokens_in": 1500,
       "tokens_out": 2800,
       "model": "claude-sonnet-4-6",
@@ -85,79 +142,35 @@
       "context_additions": []
     },
     {
-      "pass": "ArchitectureDenoise",
+      "stage": "Nurturing",
       "attempt": 1,
-      "started_at": "2026-02-23T18:33:50Z",
-      "ended_at": "2026-02-23T18:36:10Z",
-      "result": "Ok",
-      "artifact_summary": "Single Motoko canister with stable HashMap for todos. HTTP interface via query/update calls. Auto-incrementing ID.",
-      "tokens_in": 2400,
-      "tokens_out": 6800,
-      "model": "claude-sonnet-4-6",
-      "cost_usd": 0.09,
-      "context_additions": [
-        {
-          "kind": "Artifact",
-          "content": "Architecture: Motoko canister, StableHashMap<Nat, Todo>, http_request handler"
-        }
-      ]
-    },
-    {
-      "pass": "ImplementationDenoise",
-      "attempt": 1,
-      "started_at": "2026-02-23T18:36:15Z",
-      "ended_at": "2026-02-23T18:42:30Z",
-      "result": "Ok",
-      "artifact_summary": "Generated Motoko canister with CRUD functions, stable storage, HTTP request routing",
-      "tokens_in": 5200,
-      "tokens_out": 12400,
-      "model": "claude-sonnet-4-6",
-      "cost_usd": 0.18,
-      "context_additions": [
-        {
-          "kind": "Artifact",
-          "content": "Implementation: 4 CRUD functions, http_request router, JSON serialization"
-        }
-      ]
-    },
-    {
-      "pass": "IntegrationDenoise",
-      "attempt": 1,
-      "started_at": "2026-02-23T18:42:35Z",
-      "ended_at": "2026-02-23T19:15:20Z",
-      "result": "Ok",
-      "artifact_summary": "Deployed to ephemeral canister, all CRUD tests passed, upgrade test passed",
-      "tokens_in": 3800,
-      "tokens_out": 8900,
-      "model": "claude-sonnet-4-6",
-      "cost_usd": 0.13,
-      "context_additions": [
-        {
-          "kind": "Artifact",
-          "content": "Integration: Deployed, all endpoints reachable, state persists across upgrade"
-        }
-      ]
-    },
-    {
-      "pass": "IntentVerification",
-      "attempt": 1,
-      "started_at": "2026-02-23T19:15:25Z",
+      "started_at": "2026-02-23T19:40:05Z",
       "ended_at": "2026-02-23T19:42:10Z",
       "result": "Ok",
-      "artifact_summary": "Adversarial tests passed: concurrent updates, malformed inputs, stress test (100 req/s sustained)",
-      "tokens_in": 4100,
-      "tokens_out": 9200,
+      "artifact_summary": "Customer onboarding complete. Documentation delivered. Success metrics established.",
+      "tokens_in": 800,
+      "tokens_out": 1500,
       "model": "claude-sonnet-4-6",
-      "cost_usd": 0.14,
-      "context_additions": [
-        {
-          "kind": "Artifact",
-          "content": "Verification: All acceptance criteria met, no regressions detected"
-        }
-      ]
+      "cost_usd": 0.02,
+      "context_additions": []
     }
   ],
-  "backpressure_events": [],
+  "gate_events": [
+    {
+      "gate": "ConciergeToFactory",
+      "timestamp": "2026-02-23T18:33:50Z",
+      "result": "Pass",
+      "summary": "huxl-dsl quality meets Tier B requirements",
+      "tier_check": "B"
+    },
+    {
+      "gate": "FactoryToCustomer",
+      "timestamp": "2026-02-23T19:35:10Z",
+      "result": "Pass",
+      "summary": "Inspector approved: all checks green",
+      "tier_check": "B"
+    }
+  ],
   "validation_results": [
     {
       "check": "no_unwrap_in_production",
@@ -214,18 +227,8 @@
     "within_budget": true,
     "measured_cycles_per_unit": 85000,
     "component_costs": [
-      {
-        "name": "todo_storage",
-        "tier": 1,
-        "estimated_monthly_cycles": 180000000000,
-        "notes": "Stable storage read/write cycles"
-      },
-      {
-        "name": "http_interface",
-        "tier": 2,
-        "estimated_monthly_cycles": 140000000000,
-        "notes": "HTTP request processing"
-      }
+      { "name": "todo_storage", "tier": 1, "estimated_monthly_cycles": 180000000000, "notes": "Stable storage read/write cycles" },
+      { "name": "http_interface", "tier": 2, "estimated_monthly_cycles": 140000000000, "notes": "HTTP request processing" }
     ],
     "optimizations_applied": [
       "Used query calls for read operations (no state changes)",
@@ -234,16 +237,18 @@
     ]
   },
   "conformance_bundle": {
-    "passes_completed": [
-      { "pass": "Groom", "attempts": 1, "backpressure_events": 0 },
-      { "pass": "IntentDenoise", "attempts": 1, "backpressure_events": 0 },
-      { "pass": "ArchitectureDenoise", "attempts": 1, "backpressure_events": 0 },
-      { "pass": "ImplementationDenoise", "attempts": 1, "backpressure_events": 0 },
-      { "pass": "IntegrationDenoise", "attempts": 1, "backpressure_events": 0 },
-      { "pass": "IntentVerification", "attempts": 1, "backpressure_events": 0 }
+    "stages_completed": [
+      { "stage": "Prospecting", "attempts": 1, "gate_events": 0 },
+      { "stage": "Qualifying", "attempts": 1, "gate_events": 0 },
+      { "stage": "Discovering", "attempts": 1, "gate_events": 0 },
+      { "stage": "Scoping", "attempts": 1, "gate_events": 0 },
+      { "stage": "Forging", "attempts": 1, "gate_events": 0 },
+      { "stage": "Delivering", "attempts": 1, "gate_events": 0 },
+      { "stage": "Tempering", "attempts": 1, "gate_events": 0 },
+      { "stage": "Nurturing", "attempts": 1, "gate_events": 0 }
     ],
-    "total_attempts": 6,
-    "total_cost_usd": 0.64
+    "total_attempts": 8,
+    "total_cost_usd": 0.69
   },
   "product_type": "WebService",
   "artifacts": {

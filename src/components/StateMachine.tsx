@@ -1,49 +1,83 @@
-import type { Dossier, PassId } from '~/types/dossier'
+import type { Dossier, StageId, QualityTier } from '~/types/dossier'
+import { STAGES_ORDERED } from '~/types/dossier'
 
-const PASSES: Array<{ id: PassId; label: string; description: string }> = [
-  { id: 'Groom', label: 'Groom', description: 'Clean & structure raw input' },
-  { id: 'IntentDenoise', label: 'Intent', description: 'Clarify requirements & constraints' },
-  { id: 'ArchitectureDenoise', label: 'Architecture', description: 'Design system structure' },
-  { id: 'ImplementationDenoise', label: 'Implementation', description: 'Build & validate code' },
-  { id: 'IntegrationDenoise', label: 'Integration', description: 'Wire components together' },
-  { id: 'IntentVerification', label: 'Verification', description: 'Verify against original intent' },
+interface StageInfo {
+  id: StageId
+  label: string
+  description: string
+}
+
+const STAGES: StageInfo[] = [
+  { id: 'Prospecting', label: 'Prospect', description: 'Finding the customer' },
+  { id: 'Qualifying', label: 'Qualify', description: 'Confirming fit' },
+  { id: 'Discovering', label: 'Discover', description: 'Understanding the problem' },
+  { id: 'Scoping', label: 'Scope', description: 'Defining the build' },
+  { id: 'Forging', label: 'Forge', description: 'Building the solution' },
+  { id: 'Delivering', label: 'Deliver', description: 'Validating & shipping' },
+  { id: 'Tempering', label: 'Temper', description: 'Strengthening output' },
+  { id: 'Nurturing', label: 'Nurture', description: 'Growing success' },
+]
+
+const ACTOR_ZONES: Array<{
+  label: string
+  color: string
+  stages: StageId[]
+}> = [
+  {
+    label: 'CONCIERGE',
+    color: '#00e5ff',
+    stages: ['Prospecting', 'Qualifying', 'Discovering', 'Scoping'],
+  },
+  {
+    label: 'FACTORY',
+    color: '#ff9500',
+    stages: ['Forging'],
+  },
+  {
+    label: 'INSPECTOR + POST-DELIVERY',
+    color: '#00dfa2',
+    stages: ['Delivering', 'Tempering', 'Nurturing'],
+  },
 ]
 
 export function StateMachine({ dossier }: { dossier: Dossier }) {
-  const completedPasses = new Set(
+  const completedStages = new Set(
     dossier.pipeline_timeline
       .filter((t) => t.result === 'Ok')
-      .map((t) => t.pass)
-  )
-  
-  const currentPass = dossier.current_pass
-  const failedPasses = new Set(
-    dossier.pipeline_timeline
-      .filter((t) => t.result === 'Backpressure' || t.result === 'Retry')
-      .map((t) => t.pass)
+      .map((t) => t.stage)
   )
 
-  // Get current activity description
-  const currentPassInfo = PASSES.find(p => p.id === currentPass)
+  const currentStage = dossier.current_stage
+  const failedStages = new Set(
+    dossier.pipeline_timeline
+      .filter((t) => t.result === 'Rejected' || t.result === 'GateFail')
+      .map((t) => t.stage)
+  )
+
+  const currentStageInfo = STAGES.find((s) => s.id === currentStage)
   const currentTimeline = dossier.pipeline_timeline
-    .filter((t) => t.pass === currentPass && !t.ended_at)
+    .filter((t) => t.stage === currentStage && !t.ended_at)
     .pop()
+
+  const tier = dossier.tier
 
   return (
     <div>
-      {/* Header */}
-      <h3
-        style={{
-          color: '#7a8aaa',
-          fontSize: '13px',
-          fontWeight: 700,
-          letterSpacing: '0.1em',
-          marginBottom: '24px',
-          textTransform: 'uppercase',
-        }}
-      >
-        PIPELINE OVERVIEW
-      </h3>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+        <h3
+          style={{
+            color: '#7a8aaa',
+            fontSize: '13px',
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            margin: 0,
+          }}
+        >
+          LIFECYCLE OVERVIEW
+        </h3>
+        {tier && <TierBadge tier={tier} />}
+      </div>
 
       <div
         style={{
@@ -53,208 +87,270 @@ export function StateMachine({ dossier }: { dossier: Dossier }) {
           overflow: 'hidden',
         }}
       >
-        {/* Dark Factory Entry */}
-        <div
-          style={{
-            borderBottom: '1px solid rgba(255, 149, 0, 0.2)',
-            padding: '12px 20px',
-            background: 'linear-gradient(to bottom, rgba(255, 149, 0, 0.05), transparent)',
-          }}
-        >
-          <div
-            style={{
-              fontSize: '11px',
-              color: '#ff9500',
-              fontWeight: 700,
-              letterSpacing: '0.1em',
-              textAlign: 'center',
-            }}
-          >
-            ▸ DARK FACTORY ▸
-          </div>
-        </div>
+        {ACTOR_ZONES.map((zone, zoneIdx) => {
+          const zoneStages = STAGES.filter((s) => zone.stages.includes(s.id))
+          const isLastZone = zoneIdx === ACTOR_ZONES.length - 1
+          const showGateAfter = zoneIdx === 0 || zoneIdx === 1
 
-        {/* Pipeline Passes */}
-        <div style={{ padding: '32px 20px' }}>
-          <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
-            {PASSES.map((pass, idx) => {
-              const isComplete = completedPasses.has(pass.id)
-              const isCurrent = currentPass === pass.id
-              const isFailed = failedPasses.has(pass.id)
-              const currentIndex = PASSES.findIndex(p => p.id === currentPass)
-              const isArrowBeforeCurrent = idx < currentIndex
-              const isArrowAfterCurrent = idx >= currentIndex
-              
-              return (
-                <div key={pass.id} className="flex items-center gap-1">
-                  <PassNode
-                    pass={pass}
-                    isComplete={isComplete}
-                    isCurrent={isCurrent}
-                    isFailed={isFailed}
-                  />
-                  
-                  {idx < PASSES.length - 1 && (
-                    <div
-                      className={idx === currentIndex - 1 ? 'animate-pulse' : ''}
-                      style={{
-                        color: idx < currentIndex ? 'rgba(0, 229, 255, 0.6)' : 'rgba(122, 138, 170, 0.3)',
-                        fontSize: '18px',
-                        margin: '0 4px',
-                        filter: idx === currentIndex - 1 ? 'drop-shadow(0 0 4px rgba(0, 229, 255, 0.6))' : 'none',
-                      }}
-                    >
-                      →
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Current Activity */}
-          {currentPassInfo && currentTimeline && (
-            <div
-              style={{
-                marginTop: '24px',
-                padding: '16px 20px',
-                borderRadius: '8px',
-                background: 'rgba(0, 229, 255, 0.08)',
-                border: '1px solid rgba(0, 229, 255, 0.2)',
-              }}
-            >
+          return (
+            <div key={zone.label}>
+              {/* Actor zone header */}
               <div
                 style={{
-                  fontSize: '13px',
-                  color: '#7a8aaa',
-                  marginBottom: '8px',
-                  fontWeight: 600,
+                  padding: '10px 20px',
+                  background: `linear-gradient(to right, ${zone.color}08, transparent)`,
+                  borderBottom: `1px solid ${zone.color}30`,
+                  ...(zoneIdx > 0 ? { borderTop: `1px solid ${zone.color}30` } : {}),
                 }}
               >
-                Currently Running
+                <div
+                  style={{
+                    fontSize: '11px',
+                    color: zone.color,
+                    fontWeight: 700,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  ▸ {zone.label}
+                </div>
               </div>
-              <div style={{ fontSize: '15px', color: '#e0e8f8', lineHeight: '1.7' }}>
-                {currentPassInfo.description}
-                {currentTimeline.model && (
-                  <span style={{ color: '#7a8aaa', fontSize: '13px', marginLeft: '12px' }}>
-                    · {currentTimeline.model}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
 
-        {/* Dark Factory Exit */}
+              {/* Stages in this zone */}
+              <div style={{ padding: '24px 20px' }}>
+                <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
+                  {zoneStages.map((stage, idx) => {
+                    const isComplete = completedStages.has(stage.id)
+                    const isCurrent = currentStage === stage.id
+                    const isFailed = failedStages.has(stage.id)
+
+                    return (
+                      <div key={stage.id} className="flex items-center gap-1">
+                        <StageNode
+                          stage={stage}
+                          isComplete={isComplete}
+                          isCurrent={isCurrent}
+                          isFailed={isFailed}
+                          accentColor={zone.color}
+                        />
+                        {idx < zoneStages.length - 1 && (
+                          <Arrow
+                            active={isComplete}
+                            pulsing={isCurrent}
+                            color={zone.color}
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Gate between zones */}
+              {showGateAfter && (
+                <GateDivider
+                  label={zoneIdx === 0 ? 'HUXL-DSL QUALITY GATE' : 'INSPECTOR GATE'}
+                  gateKey={zoneIdx === 0 ? 'ConciergeToFactory' : 'FactoryToCustomer'}
+                  dossier={dossier}
+                />
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Current activity callout */}
+      {currentStageInfo && currentTimeline && (
         <div
           style={{
-            borderTop: '1px solid rgba(255, 149, 0, 0.2)',
-            padding: '12px 20px',
-            background: 'linear-gradient(to top, rgba(255, 149, 0, 0.05), transparent)',
+            marginTop: '16px',
+            padding: '16px 20px',
+            borderRadius: '8px',
+            background: 'rgba(0, 229, 255, 0.08)',
+            border: '1px solid rgba(0, 229, 255, 0.2)',
           }}
         >
-          <div
-            style={{
-              fontSize: '11px',
-              color: '#ff9500',
-              fontWeight: 700,
-              letterSpacing: '0.1em',
-              textAlign: 'center',
-            }}
-          >
-            ▸ DELIVERY ▸
+          <div style={{ fontSize: '13px', color: '#7a8aaa', marginBottom: '8px', fontWeight: 600 }}>
+            Currently: {currentStageInfo.label}
+          </div>
+          <div style={{ fontSize: '15px', color: '#e0e8f8', lineHeight: '1.7' }}>
+            {currentStageInfo.description}
+            {currentTimeline.model && (
+              <span style={{ color: '#7a8aaa', fontSize: '13px', marginLeft: '12px' }}>
+                · {currentTimeline.model}
+              </span>
+            )}
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
 
-function PassNode({
-  pass,
+function TierBadge({ tier }: { tier: QualityTier }) {
+  const colors: Record<QualityTier, { bg: string; color: string; border: string; glow: string }> = {
+    B: { bg: 'rgba(122,138,170,0.15)', color: '#7a8aaa', border: 'rgba(122,138,170,0.4)', glow: 'none' },
+    A: { bg: 'rgba(0,229,255,0.15)', color: '#00e5ff', border: 'rgba(0,229,255,0.4)', glow: '0 0 8px rgba(0,229,255,0.3)' },
+    S: { bg: 'rgba(255,149,0,0.15)', color: '#ff9500', border: 'rgba(255,149,0,0.4)', glow: '0 0 12px rgba(255,149,0,0.4)' },
+  }
+  const c = colors[tier]
+  return (
+    <span
+      style={{
+        padding: '3px 10px',
+        borderRadius: '4px',
+        fontSize: '12px',
+        fontWeight: 800,
+        background: c.bg,
+        color: c.color,
+        border: `1px solid ${c.border}`,
+        boxShadow: c.glow,
+        letterSpacing: '0.05em',
+      }}
+    >
+      TIER {tier}
+    </span>
+  )
+}
+
+function Arrow({ active, pulsing, color }: { active: boolean; pulsing: boolean; color: string }) {
+  return (
+    <div
+      className={pulsing ? 'animate-pulse' : ''}
+      style={{
+        color: active ? `${color}99` : 'rgba(122, 138, 170, 0.3)',
+        fontSize: '18px',
+        margin: '0 4px',
+        filter: pulsing ? `drop-shadow(0 0 4px ${color}99)` : 'none',
+      }}
+    >
+      →
+    </div>
+  )
+}
+
+function GateDivider({
+  label,
+  gateKey,
+  dossier,
+}: {
+  label: string
+  gateKey: 'ConciergeToFactory' | 'FactoryToCustomer'
+  dossier: Dossier
+}) {
+  const events = (dossier.gate_events || []).filter((e) => e.gate === gateKey)
+  const lastEvent = events.length > 0 ? events[events.length - 1] : null
+  const passed = lastEvent?.result === 'Pass'
+  const rejected = lastEvent?.result === 'Reject'
+
+  let borderColor = 'rgba(255, 149, 0, 0.3)'
+  let iconColor = '#ff9500'
+  let icon = '⬦'
+  if (passed) {
+    borderColor = 'rgba(0, 223, 162, 0.4)'
+    iconColor = '#00dfa2'
+    icon = '✓'
+  } else if (rejected) {
+    borderColor = 'rgba(255, 56, 56, 0.4)'
+    iconColor = '#ff3838'
+    icon = '✕'
+  }
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '8px 20px',
+        borderTop: `1px dashed ${borderColor}`,
+        borderBottom: `1px dashed ${borderColor}`,
+        background: 'rgba(255, 149, 0, 0.03)',
+      }}
+    >
+      <span style={{ color: iconColor, fontSize: '14px', fontWeight: 700 }}>{icon}</span>
+      <span
+        style={{
+          fontSize: '10px',
+          fontWeight: 700,
+          letterSpacing: '0.12em',
+          color: iconColor,
+          textTransform: 'uppercase',
+        }}
+      >
+        {label}
+      </span>
+      {lastEvent && (
+        <span style={{ fontSize: '11px', color: '#7a8aaa', marginLeft: 'auto' }}>
+          {lastEvent.summary}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function StageNode({
+  stage,
   isComplete,
   isCurrent,
   isFailed,
+  accentColor,
 }: {
-  pass: { id: PassId; label: string; description: string }
+  stage: StageInfo
   isComplete: boolean
   isCurrent: boolean
   isFailed: boolean
+  accentColor: string
 }) {
-  let containerClass = 'rgba(122, 138, 170, 0.15)'
+  let bgColor = 'rgba(122, 138, 170, 0.15)'
   let borderColor = 'rgba(122, 138, 170, 0.3)'
   let textColor = '#7a8aaa'
   let icon = '○'
   let glowClass = ''
-  
+
   if (isComplete) {
-    containerClass = 'rgba(0, 229, 255, 0.15)'
-    borderColor = 'rgba(0, 229, 255, 0.5)'
-    textColor = '#00e5ff'
+    bgColor = 'rgba(0, 223, 162, 0.15)'
+    borderColor = 'rgba(0, 223, 162, 0.5)'
+    textColor = '#00dfa2'
     icon = '✓'
   } else if (isCurrent) {
-    containerClass = 'rgba(0, 229, 255, 0.25)'
-    borderColor = '#00e5ff'
-    textColor = '#00e5ff'
+    bgColor = `${accentColor}40`
+    borderColor = accentColor
+    textColor = accentColor
     icon = '●'
     glowClass = 'animate-pulse'
   } else if (isFailed) {
-    containerClass = 'rgba(255, 56, 56, 0.15)'
+    bgColor = 'rgba(255, 56, 56, 0.15)'
     borderColor = 'rgba(255, 56, 56, 0.5)'
     textColor = '#ff3838'
     icon = '✕'
   }
-  
+
   return (
-    <div 
-      style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
-        width: '100px', 
-        minHeight: '130px' 
-      }}
-    >
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '80px', minHeight: '110px' }}>
       <div
         className={glowClass}
         style={{
-          width: '48px',
-          height: '48px',
+          width: '42px',
+          height: '42px',
           borderRadius: '50%',
           border: `2px solid ${borderColor}`,
-          background: containerClass,
+          background: bgColor,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '18px',
+          fontSize: '16px',
           color: textColor,
           flexShrink: 0,
         }}
       >
         {icon}
       </div>
-      <div
-        style={{
-          marginTop: '8px',
-          fontWeight: 600,
-          fontSize: '13px',
-          color: textColor,
-          textAlign: 'center',
-        }}
-      >
-        {pass.label}
+      <div style={{ marginTop: '8px', fontWeight: 600, fontSize: '12px', color: textColor, textAlign: 'center' }}>
+        {stage.label}
       </div>
-      <div
-        style={{
-          marginTop: '4px',
-          fontSize: '11px',
-          color: '#7a8aaa',
-          textAlign: 'center',
-          lineHeight: '1.4',
-          maxWidth: '90px',
-        }}
-      >
-        {pass.description}
+      <div style={{ marginTop: '3px', fontSize: '10px', color: '#7a8aaa', textAlign: 'center', lineHeight: '1.4', maxWidth: '75px' }}>
+        {stage.description}
       </div>
     </div>
   )

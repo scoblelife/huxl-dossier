@@ -1,15 +1,38 @@
 export type WallSteepness = 'Gentle' | 'Moderate' | 'Steep' | 'Sheer'
-export type JobState = 'Intake' | 'Grooming' | 'Denoising' | 'Backpressure' | 'Complete' | 'Failed' | 'ScopeSplit'
-export type PassId = 'Groom' | 'IntentDenoise' | 'ArchitectureDenoise' | 'ImplementationDenoise' | 'IntegrationDenoise' | 'IntentVerification'
-export type PassResult = 'Ok' | 'Retry' | 'Backpressure' | 'ScopeSplit'
-export type ProductType = 'WebService' | 'Library' | 'CliTool' | 'WebApp'
-export type EventType = 'PassStarted' | 'PassCompleted' | 'PassFailed' | 'PassRetrying' | 'BackpressureTriggered' | 'CustomerEscalation'
+export type JobState = 'Intake' | 'Concierge' | 'Forging' | 'Inspecting' | 'Delivered' | 'Tempering' | 'Nurturing' | 'Complete' | 'Failed' | 'Rejected'
+export type StageId = 'Prospecting' | 'Qualifying' | 'Discovering' | 'Scoping' | 'Forging' | 'Delivering' | 'Tempering' | 'Nurturing'
+export type Actor = 'Concierge' | 'Factory' | 'Inspector'
+export type QualityTier = 'B' | 'A' | 'S'
+export type PassResult = 'Ok' | 'Retry' | 'Rejected' | 'GateFail'
+export type ProductType = 'WebService' | 'Library' | 'CliTool' | 'WebApp' | 'Platform'
+export type EventType = 'StageStarted' | 'StageCompleted' | 'StageFailed' | 'StageRetrying' | 'GateRejected' | 'CustomerEscalation'
+
+/** @deprecated — kept for backward compat with old sample data */
+export type PassId = StageId
+
+export const STAGE_ACTOR: Record<StageId, Actor> = {
+  Prospecting: 'Concierge',
+  Qualifying: 'Concierge',
+  Discovering: 'Concierge',
+  Scoping: 'Concierge',
+  Forging: 'Factory',
+  Delivering: 'Inspector',
+  Tempering: 'Concierge',
+  Nurturing: 'Concierge',
+}
+
+export const STAGES_ORDERED: StageId[] = [
+  'Prospecting', 'Qualifying', 'Discovering', 'Scoping',
+  'Forging', 'Delivering', 'Tempering', 'Nurturing',
+]
 
 export interface Dossier {
   job_id: string
   created_at: string
   updated_at: string
-  
+
+  tier?: QualityTier
+
   intent: {
     raw: string
     structured: null | {
@@ -22,7 +45,7 @@ export interface Dossier {
       domain_constraints: string[]
     }
   }
-  
+
   constraint_profile: {
     security: WallSteepness
     performance: WallSteepness
@@ -42,13 +65,13 @@ export interface Dossier {
       }
     }
   }
-  
+
   state: JobState
-  current_pass: PassId | null
+  current_stage: StageId | null
   current_attempt: number
-  
+
   pipeline_timeline: Array<{
-    pass: PassId
+    stage: StageId
     attempt: number
     started_at: string
     ended_at: string | null
@@ -59,20 +82,19 @@ export interface Dossier {
     model: string
     cost_usd: number
     context_additions: Array<{
-      kind: 'Artifact' | 'FailureSignal' | 'ScopeSignal' | 'ExternalInput'
+      kind: 'Artifact' | 'FailureSignal' | 'ScopeSignal' | 'ExternalInput' | 'DiscoveryBrief' | 'SubAgent'
       content: string
     }>
   }>
-  
-  backpressure_events: Array<{
-    from: PassId
-    to: PassId | 'Customer'
+
+  gate_events: Array<{
+    gate: 'ConciergeToFactory' | 'FactoryToCustomer'
     timestamp: string
-    failure_summary: string
-    guidance: string
-    attempts_exhausted: number
+    result: 'Pass' | 'Reject'
+    summary: string
+    tier_check?: QualityTier
   }>
-  
+
   validation_results: Array<{
     check: string
     source: 'semgrep' | 'rust'
@@ -83,7 +105,7 @@ export interface Dossier {
     fix_instructions: string
     files_to_change: string[]
   }>
-  
+
   bedrock_checks: null | {
     compiles: boolean
     boots: boolean
@@ -93,7 +115,7 @@ export interface Dossier {
     resource_bounded: boolean
     observability_hooks: boolean
   }
-  
+
   cost_verification: null | {
     estimated_monthly_cycles_t: number
     within_budget: boolean
@@ -106,21 +128,26 @@ export interface Dossier {
     }>
     optimizations_applied: string[]
   }
-  
+
   conformance_bundle: null | {
-    passes_completed: Array<{
-      pass: PassId
+    stages_completed: Array<{
+      stage: StageId
       attempts: number
-      backpressure_events: number
+      gate_events: number
     }>
     total_attempts: number
     total_cost_usd: number
   }
-  
+
   product_type: ProductType
   artifacts: {
     repo_url: string | null
     depot_build_url: string | null
     files: string[]
   }
+
+  /** @deprecated old field name — normalized to current_stage at load time */
+  current_pass?: string | null
+  /** @deprecated old field name — normalized to gate_events */
+  backpressure_events?: Array<Record<string, unknown>>
 }

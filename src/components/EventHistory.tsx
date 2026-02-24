@@ -6,7 +6,7 @@ interface Event {
   type: EventType
   timestamp: string
   duration: number | null
-  pass: string
+  stage: string
   attempt: number
   result: string | null
   tokens: { in: number; out: number }
@@ -19,20 +19,20 @@ interface Event {
 export function EventHistory({ dossier, limit }: { dossier: Dossier; limit?: number }) {
   const events = buildEventHistory(dossier)
   const displayEvents = limit ? events.slice(-limit) : events
-  
+
   return (
     <div style={{ background: '#0c1019', border: '1px solid #1c2640', borderRadius: '10px' }}>
       <div style={{ borderBottom: '1px solid #1c2640', padding: '20px' }} className="sm:p-8">
         <h2 className="text-lg font-semibold" style={{ color: '#e0e8f8' }}>Event History</h2>
         <p className="text-sm mt-2" style={{ color: '#546080' }}>
-          Chronological log of all pipeline activities • {events.length} total events
+          Chronological log of all lifecycle activities • {events.length} total events
         </p>
       </div>
-      
+
       <div style={{ borderTop: '1px solid #1c2640' }}>
         {displayEvents.length === 0 ? (
-          <div className="text-center" style={{ color: '#546080', padding: '20px' }} className="sm:py-12 sm:px-8">
-            No events yet. Pipeline is initializing...
+          <div className="text-center" style={{ color: '#546080', padding: '20px' }}>
+            No events yet. Lifecycle is initializing...
           </div>
         ) : (
           displayEvents.map((event) => (
@@ -40,9 +40,9 @@ export function EventHistory({ dossier, limit }: { dossier: Dossier; limit?: num
           ))
         )}
       </div>
-      
+
       {limit && events.length > limit && (
-        <div className="text-center text-sm" style={{ borderTop: '1px solid #1c2640', color: '#546080', padding: '16px 20px' }} className="sm:py-5 sm:px-8">
+        <div className="text-center text-sm" style={{ borderTop: '1px solid #1c2640', color: '#546080', padding: '16px 20px' }}>
           Showing last {limit} of {events.length} events
         </div>
       )}
@@ -52,25 +52,25 @@ export function EventHistory({ dossier, limit }: { dossier: Dossier; limit?: num
 
 function EventRow({ event }: { event: Event }) {
   const [expanded, setExpanded] = useState(false)
-  
-  const typeColors = {
-    PassStarted: 'text-blue-400',
-    PassCompleted: 'text-success',
-    PassFailed: 'text-danger',
-    PassRetrying: 'text-warning',
-    BackpressureTriggered: 'text-warning',
+
+  const typeColors: Record<string, string> = {
+    StageStarted: 'text-blue-400',
+    StageCompleted: 'text-success',
+    StageFailed: 'text-danger',
+    StageRetrying: 'text-warning',
+    GateRejected: 'text-warning',
     CustomerEscalation: 'text-danger',
   }
-  
-  const typeIcons = {
-    PassStarted: '▶',
-    PassCompleted: '✓',
-    PassFailed: '✕',
-    PassRetrying: '↻',
-    BackpressureTriggered: '↶',
+
+  const typeIcons: Record<string, string> = {
+    StageStarted: '▶',
+    StageCompleted: '✓',
+    StageFailed: '✕',
+    StageRetrying: '↻',
+    GateRejected: '↶',
     CustomerEscalation: '⚠️',
   }
-  
+
   return (
     <div style={{ borderBottom: '1px solid #1c2640' }}>
       <button
@@ -82,18 +82,18 @@ function EventRow({ event }: { event: Event }) {
           <div className="flex-shrink-0 w-8 sm:w-12 text-right text-xs sm:text-sm text-gray-500 font-mono">
             #{event.id}
           </div>
-          
+
           <div className="flex-shrink-0 w-5 sm:w-6 text-center">
-            <span className={typeColors[event.type]}>{typeIcons[event.type]}</span>
+            <span className={typeColors[event.type] || 'text-gray-400'}>{typeIcons[event.type] || '○'}</span>
           </div>
-          
+
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
-              <span className={`text-sm font-medium ${typeColors[event.type]}`}>
+              <span className={`text-sm font-medium ${typeColors[event.type] || 'text-gray-400'}`}>
                 {event.type}
               </span>
               <span className="text-gray-400 hidden sm:inline">·</span>
-              <code className="text-xs sm:text-sm text-accent">{event.pass}</code>
+              <code className="text-xs sm:text-sm text-accent">{event.stage}</code>
               {event.attempt > 1 && (
                 <>
                   <span className="text-gray-400">·</span>
@@ -107,7 +107,7 @@ function EventRow({ event }: { event: Event }) {
                 </>
               )}
             </div>
-            
+
             <div className="flex items-center gap-4 text-xs text-gray-500">
               <span>{new Date(event.timestamp).toLocaleTimeString()}</span>
               {event.result && <span>Result: {event.result}</span>}
@@ -119,22 +119,22 @@ function EventRow({ event }: { event: Event }) {
               {event.cost > 0 && <span>${event.cost.toFixed(4)}</span>}
             </div>
           </div>
-          
+
           <div className="flex-shrink-0 text-gray-400">
             {expanded ? '▼' : '▶'}
           </div>
         </div>
       </button>
-      
+
       {expanded && (
-        <div className="space-y-5" style={{ borderTop: '1px solid rgba(28, 38, 64, 0.5)', padding: '20px', paddingTop: '20px' }} className="sm:px-8 sm:pl-28">
+        <div className="space-y-5" style={{ borderTop: '1px solid rgba(28, 38, 64, 0.5)', padding: '20px' }}>
           {event.model && (
             <div>
               <div className="text-xs text-gray-500 mb-2">Model</div>
               <code className="text-sm text-accent">{event.model}</code>
             </div>
           )}
-          
+
           {event.artifact && (
             <div>
               <div className="text-xs text-gray-500 mb-2">Artifact Summary</div>
@@ -143,7 +143,7 @@ function EventRow({ event }: { event: Event }) {
               </div>
             </div>
           )}
-          
+
           {event.context.length > 0 && (
             <div>
               <div className="text-xs text-gray-500 mb-3">Context Additions ({event.context.length})</div>
@@ -168,16 +168,14 @@ function EventRow({ event }: { event: Event }) {
 function buildEventHistory(dossier: Dossier): Event[] {
   const events: Event[] = []
   let eventId = 1
-  
-  // Build events from timeline
+
   for (const entry of dossier.pipeline_timeline) {
-    // Start event
     events.push({
       id: eventId++,
-      type: 'PassStarted',
+      type: 'StageStarted',
       timestamp: entry.started_at,
       duration: null,
-      pass: entry.pass,
+      stage: entry.stage,
       attempt: entry.attempt,
       result: null,
       tokens: { in: 0, out: 0 },
@@ -186,22 +184,20 @@ function buildEventHistory(dossier: Dossier): Event[] {
       artifact: null,
       context: [],
     })
-    
-    // End event (if completed)
+
     if (entry.ended_at) {
-      const duration =
-        new Date(entry.ended_at).getTime() - new Date(entry.started_at).getTime()
-      
-      let eventType: EventType = 'PassCompleted'
-      if (entry.result === 'Retry') eventType = 'PassRetrying'
-      else if (entry.result === 'Backpressure') eventType = 'PassFailed'
-      
+      const duration = new Date(entry.ended_at).getTime() - new Date(entry.started_at).getTime()
+
+      let eventType: EventType = 'StageCompleted'
+      if (entry.result === 'Retry') eventType = 'StageRetrying'
+      else if (entry.result === 'Rejected' || entry.result === 'GateFail') eventType = 'StageFailed'
+
       events.push({
         id: eventId++,
         type: eventType,
         timestamp: entry.ended_at,
         duration,
-        pass: entry.pass,
+        stage: entry.stage,
         attempt: entry.attempt,
         result: entry.result || 'Unknown',
         tokens: { in: entry.tokens_in, out: entry.tokens_out },
@@ -212,33 +208,30 @@ function buildEventHistory(dossier: Dossier): Event[] {
       })
     }
   }
-  
-  // Add backpressure events
-  for (const bp of dossier.backpressure_events) {
-    events.push({
-      id: eventId++,
-      type: bp.to === 'Customer' ? 'CustomerEscalation' : 'BackpressureTriggered',
-      timestamp: bp.timestamp,
-      duration: null,
-      pass: `${bp.from} → ${bp.to}`,
-      attempt: bp.attempts_exhausted,
-      result: 'Backpressure',
-      tokens: { in: 0, out: 0 },
-      cost: 0,
-      model: '',
-      artifact: bp.failure_summary,
-      context: [{ kind: 'FailureSignal', content: bp.guidance }],
-    })
+
+  // Add gate events
+  for (const gate of (dossier.gate_events || [])) {
+    if (gate.result === 'Reject') {
+      events.push({
+        id: eventId++,
+        type: 'GateRejected',
+        timestamp: gate.timestamp,
+        duration: null,
+        stage: gate.gate,
+        attempt: 0,
+        result: 'Rejected',
+        tokens: { in: 0, out: 0 },
+        cost: 0,
+        model: '',
+        artifact: gate.summary,
+        context: [],
+      })
+    }
   }
-  
-  // Sort by timestamp
+
   events.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-  
-  // Reassign sequential IDs
-  events.forEach((e, idx) => {
-    e.id = idx + 1
-  })
-  
+  events.forEach((e, idx) => { e.id = idx + 1 })
+
   return events
 }
 

@@ -1,57 +1,22 @@
 {
   "job_id": "kith-github-replacement-build",
-  "created_at": "2026-02-24T04:52:00Z",
+  "created_at": "2026-02-24T04:48:00Z",
   "updated_at": "2026-02-24T04:54:00Z",
+  "tier": "S",
   "intent": {
-    "raw": "Finish the Kith project \u2014 make it a usable GitHub replacement. Fix critical TODOs, build missing services (issues, SSH, importer), complete the frontend.",
+    "raw": "Finish the Kith project — make it a usable GitHub replacement. Fix critical TODOs, build missing services (issues, SSH, importer), complete the frontend.",
     "structured": {
       "summary": "Complete Kith as a self-hosted GitHub alternative with full feature parity",
       "acceptance_criteria": [
-        {
-          "id": "AC-1",
-          "description": "Git core object store reads/decompresses objects correctly",
-          "verifiable_as": "cargo test passes in core/git-core/rust"
-        },
-        {
-          "id": "AC-2",
-          "description": "Issue tracker with full CRUD, labels, milestones, comments",
-          "verifiable_as": "Issue service builds and tests pass"
-        },
-        {
-          "id": "AC-3",
-          "description": "SSH git protocol support",
-          "verifiable_as": "Can clone/push via SSH on port 2222"
-        },
-        {
-          "id": "AC-4",
-          "description": "Access policy CIDR matching and time ranges work",
-          "verifiable_as": "cargo test in http/git-http"
-        },
-        {
-          "id": "AC-5",
-          "description": "Issues UI in TanStack Start",
-          "verifiable_as": "npm run build succeeds in web-tanstack"
-        },
-        {
-          "id": "AC-6",
-          "description": "GitHub migration importer",
-          "verifiable_as": "Can import a GitHub repo with issues and PRs"
-        },
-        {
-          "id": "AC-7",
-          "description": "Code search",
-          "verifiable_as": "Search API returns results for known content"
-        },
-        {
-          "id": "AC-8",
-          "description": "Releases/tags management API",
-          "verifiable_as": "CRUD endpoints for releases work"
-        },
-        {
-          "id": "AC-9",
-          "description": "Forking model",
-          "verifiable_as": "Can fork a repo and push to the fork"
-        }
+        { "id": "AC-1", "description": "Git core object store reads/decompresses objects correctly", "verifiable_as": "cargo test passes in core/git-core/rust" },
+        { "id": "AC-2", "description": "Issue tracker with full CRUD, labels, milestones, comments", "verifiable_as": "Issue service builds and tests pass" },
+        { "id": "AC-3", "description": "SSH git protocol support", "verifiable_as": "Can clone/push via SSH on port 2222" },
+        { "id": "AC-4", "description": "Access policy CIDR matching and time ranges work", "verifiable_as": "cargo test in http/git-http" },
+        { "id": "AC-5", "description": "Issues UI in TanStack Start", "verifiable_as": "npm run build succeeds in web-tanstack" },
+        { "id": "AC-6", "description": "GitHub migration importer", "verifiable_as": "Can import a GitHub repo with issues and PRs" },
+        { "id": "AC-7", "description": "Code search", "verifiable_as": "Search API returns results for known content" },
+        { "id": "AC-8", "description": "Releases/tags management API", "verifiable_as": "CRUD endpoints for releases work" },
+        { "id": "AC-9", "description": "Forking model", "verifiable_as": "Can fork a repo and push to the fork" }
       ],
       "domain_constraints": [
         "TigerStyle: no unwrap(), bounded collections, assert invariants",
@@ -74,56 +39,76 @@
       "cost_scaling_dimension": "services",
       "target_cycles_per_unit": 0,
       "tiers": {
-        "tier1_critical": [
-          "git-core",
-          "issue-service",
-          "ssh-server"
-        ],
-        "tier2_important": [
-          "access-policy",
-          "issue-frontend",
-          "github-importer"
-        ],
-        "tier3_optional": [
-          "code-search",
-          "releases-api",
-          "forking"
-        ]
+        "tier1_critical": ["git-core", "issue-service", "ssh-server"],
+        "tier2_important": ["access-policy", "issue-frontend", "github-importer"],
+        "tier3_optional": ["code-search", "releases-api", "forking"]
       }
     }
   },
-  "state": "Denoising",
-  "current_pass": "ImplementationDenoise",
+  "state": "Forging",
+  "current_stage": "Forging",
   "current_attempt": 1,
   "pipeline_timeline": [
     {
-      "pass": "Groom",
+      "stage": "Prospecting",
       "attempt": 1,
-      "started_at": "2026-02-24T04:48:00Z",
-      "ended_at": "2026-02-24T04:52:00Z",
+      "started_at": "2026-02-24T04:40:00Z",
+      "ended_at": "2026-02-24T04:41:00Z",
       "result": "Ok",
-      "artifact_summary": "Audit complete. 113K LOC across 18 services. 6 critical TODOs, 10 missing features for GitHub parity. Three-phase plan: fix TODOs \u2192 build table stakes \u2192 migration tooling.",
+      "artifact_summary": "Internal project: Kith GitHub replacement. Tier S engagement.",
+      "tokens_in": 500,
+      "tokens_out": 800,
+      "model": "claude-opus-4-6",
+      "cost_usd": 0.02,
+      "context_additions": []
+    },
+    {
+      "stage": "Qualifying",
+      "attempt": 1,
+      "started_at": "2026-02-24T04:41:05Z",
+      "ended_at": "2026-02-24T04:42:30Z",
+      "result": "Ok",
+      "artifact_summary": "Tier S project: complex platform, 113K LOC, 18 services. Full qualification passed.",
+      "tokens_in": 2000,
+      "tokens_out": 3500,
+      "model": "claude-opus-4-6",
+      "cost_usd": 0.08,
+      "context_additions": []
+    },
+    {
+      "stage": "Discovering",
+      "attempt": 1,
+      "started_at": "2026-02-24T04:42:35Z",
+      "ended_at": "2026-02-24T04:48:00Z",
+      "result": "Ok",
+      "artifact_summary": "Discovery Brief: 113K LOC, 18 services, 6 critical TODOs, 10 missing features. Three-phase plan: fix TODOs → build table stakes → migration tooling.",
       "tokens_in": 8000,
       "tokens_out": 4500,
       "model": "claude-opus-4-6",
-      "cost_usd": 0.85,
+      "cost_usd": 0.55,
       "context_additions": [
-        {
-          "kind": "Artifact",
-          "content": "Phase 1: git-core fixes, access policy, runner registration"
-        },
-        {
-          "kind": "Artifact",
-          "content": "Phase 2: issue tracker, SSH, code search, releases"
-        },
-        {
-          "kind": "Artifact",
-          "content": "Phase 3: GitHub importer, forking, container registry"
-        }
+        { "kind": "DiscoveryBrief", "content": "Phase 1: git-core fixes, access policy, runner registration" },
+        { "kind": "DiscoveryBrief", "content": "Phase 2: issue tracker, SSH, code search, releases" },
+        { "kind": "DiscoveryBrief", "content": "Phase 3: GitHub importer, forking, container registry" }
       ]
     },
     {
-      "pass": "ImplementationDenoise",
+      "stage": "Scoping",
+      "attempt": 1,
+      "started_at": "2026-02-24T04:48:05Z",
+      "ended_at": "2026-02-24T04:52:00Z",
+      "result": "Ok",
+      "artifact_summary": "huxl-dsl produced: 9 acceptance criteria, 4 domain constraints, 3-phase execution plan. Tier S stringency applied.",
+      "tokens_in": 5000,
+      "tokens_out": 8000,
+      "model": "claude-opus-4-6",
+      "cost_usd": 0.15,
+      "context_additions": [
+        { "kind": "Artifact", "content": "huxl-dsl: Rust+Axum backend, TanStack Start frontend, event-sourced models, TigerStyle constraints" }
+      ]
+    },
+    {
+      "stage": "Forging",
       "attempt": 1,
       "started_at": "2026-02-24T04:52:00Z",
       "ended_at": null,
@@ -134,59 +119,31 @@
       "model": "claude-sonnet-4-6",
       "cost_usd": 0,
       "context_additions": [
-        {
-          "kind": "SubAgent",
-          "content": "kith-git-core: fixing object read/decompress + pack index"
-        },
-        {
-          "kind": "SubAgent",
-          "content": "kith-access-policy: CIDR matching + time ranges + runner ID"
-        },
-        {
-          "kind": "SubAgent",
-          "content": "kith-issue-service: full issue tracker backend"
-        },
-        {
-          "kind": "SubAgent",
-          "content": "kith-issue-frontend: TanStack Start issues UI"
-        },
-        {
-          "kind": "SubAgent",
-          "content": "kith-ssh: SSH git protocol server with russh"
-        }
+        { "kind": "SubAgent", "content": "kith-git-core: fixing object read/decompress + pack index" },
+        { "kind": "SubAgent", "content": "kith-access-policy: CIDR matching + time ranges + runner ID" },
+        { "kind": "SubAgent", "content": "kith-issue-service: full issue tracker backend" },
+        { "kind": "SubAgent", "content": "kith-issue-frontend: TanStack Start issues UI" },
+        { "kind": "SubAgent", "content": "kith-ssh: SSH git protocol server with russh" }
       ]
     }
   ],
-  "backpressure_log": [],
-  "bedrock_checks": {
-    "security": null,
-    "cost": null,
-    "conformance": null
-  },
-  "conformance_bundle": null,
-  "artifacts": {
-    "files_created": [],
-    "files_modified": [
-      "core/git-core/rust/src/main.rs",
-      "http/git-http/src/storage/file.rs",
-      "http/git-http/src/access/policy.rs",
-      "workflow/workflow-server/src/runner/job_loop.rs"
-    ],
-    "services_added": [
-      "issue-service",
-      "git-ssh",
-      "migration-service"
-    ]
-  },
-  "cost_tracker": {
-    "total_usd": 0.85,
-    "budget_remaining_usd": 49.15,
-    "by_model": {
-      "claude-opus-4-6": 0.85,
-      "claude-sonnet-4-6": 0
+  "gate_events": [
+    {
+      "gate": "ConciergeToFactory",
+      "timestamp": "2026-02-24T04:52:00Z",
+      "result": "Pass",
+      "summary": "huxl-dsl quality meets Tier S requirements — comprehensive spec with 9 AC",
+      "tier_check": "S"
     }
-  },
-  "backpressure_events": [],
+  ],
   "validation_results": [],
-  "product_type": "Platform"
+  "bedrock_checks": null,
+  "cost_verification": null,
+  "conformance_bundle": null,
+  "product_type": "Platform",
+  "artifacts": {
+    "repo_url": null,
+    "depot_build_url": null,
+    "files": []
+  }
 }
