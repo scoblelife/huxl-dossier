@@ -42,5 +42,7 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          npm install -g @railway/cli
-          railway redeploy --service huxl-dossier --yes
+          curl -s -X POST https://backboard.railway.app/graphql/v2 \
+            -H "Authorization: Bearer $RAILWAY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"mutation { serviceInstanceRedeploy(serviceId: \"e0c7ec1a-514e-4515-8004-a083c861a3b2\", environmentId: \"2b4eaea1-59bd-431b-8171-e27c1b534200\") }"}'
