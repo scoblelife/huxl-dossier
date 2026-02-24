@@ -1,0 +1,27 @@
+{
+  "name": "huxl-dossier",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node ./node_modules/vite/bin/vite.js",
+    "build": "node ./node_modules/vite/bin/vite.js build",
+    "preview": "node ./node_modules/vite/bin/vite.js preview"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.2.1",
+    "@tanstack/react-query": "^5.62.11",
+    "@tanstack/react-router": "^1.91.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.7.0",
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1"
+  }
+}

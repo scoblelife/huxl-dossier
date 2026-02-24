@@ -1,0 +1,85 @@
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+@theme {
+  --color-bg: #06080e;
+  --color-card: #0c1019;
+  --color-card-hover: #111825;
+  --color-border: #1c2640;
+  --color-text: #e0e8f8;
+  --color-muted: #7a8aaa;
+  --color-accent: #00e5ff;
+  --color-accent-dim: rgba(0, 229, 255, 0.08);
+  --color-success: #00dfa2;
+  --color-warning: #ff9500;
+  --color-danger: #ff3838;
+  --color-purple: #bf5af2;
+  --color-dark-zone: #040610;
+  --color-light-zone: #10141e;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  background-color: #06080e;
+  color: #e0e8f8;
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New',
+    monospace;
+}
+
+/* Subtle grid background */
+.hud-grid {
+  background-image: 
+    linear-gradient(rgba(0, 229, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Glow classes */
+.glow-cyan {
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.25), 0 0 5px rgba(0, 229, 255, 0.15);
+}
+.glow-cyan-subtle {
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.12), 0 0 3px rgba(0, 229, 255, 0.08);
+}
+.glow-fire {
+  box-shadow: 0 0 15px rgba(255, 56, 56, 0.25), 0 0 5px rgba(255, 149, 0, 0.15);
+}
+.glow-purple {
+  box-shadow: 0 0 15px rgba(191, 90, 242, 0.25), 0 0 5px rgba(191, 90, 242, 0.15);
+}
+.glow-success {
+  box-shadow: 0 0 15px rgba(0, 223, 162, 0.25), 0 0 5px rgba(0, 223, 162, 0.15);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(0, 229, 255, 0.2), 0 0 4px rgba(0, 229, 255, 0.1); }
+  50% { box-shadow: 0 0 25px rgba(0, 229, 255, 0.4), 0 0 10px rgba(0, 229, 255, 0.2); }
+}
+
+@keyframes border-glow {
+  0%, 100% { border-color: rgba(0, 229, 255, 0.3); }
+  50% { border-color: rgba(0, 229, 255, 0.6); }
+}
+
+.animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+.animate-glow { animation: glow-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+.animate-border-glow { animation: border-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }

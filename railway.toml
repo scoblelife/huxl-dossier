@@ -1,0 +1,13 @@
+[build]
+# We use Depot for builds, not Railway's builder
+# Deploy from Docker image
+
+[deploy]
+startCommand = "caddy run --config /etc/caddy/Caddyfile"
+healthcheckPath = "/"
+healthcheckTimeout = 10
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[service]
+internalPort = 8080
