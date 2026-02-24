@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
 jobs:
   build-and-deploy:
     runs-on: depot-ubuntu-24.04
@@ -33,15 +38,9 @@ jobs:
         env:
           DEPOT_TOKEN: ${{ secrets.DEPOT_TOKEN }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
       - name: Deploy to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway redeploy --service huxl-dossier --yes
+        run: |
+          npm install -g @railway/cli
+          railway redeploy --service huxl-dossier --yes
