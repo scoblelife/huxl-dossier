@@ -23,16 +23,32 @@ export function StageModal({
   dossier,
   stage,
   onClose,
+  onNavigate,
 }: {
   dossier: Dossier
   stage: StageId
   onClose: () => void
+  onNavigate: (stage: StageId) => void
 }) {
+  const stageIdx = STAGES_ORDERED.indexOf(stage)
+  const hasPrev = stageIdx > 0
+  const hasNext = stageIdx < STAGES_ORDERED.length - 1
+
+  const navigatePrev = useCallback(() => {
+    if (hasPrev) onNavigate(STAGES_ORDERED[stageIdx - 1])
+  }, [hasPrev, stageIdx, onNavigate])
+
+  const navigateNext = useCallback(() => {
+    if (hasNext) onNavigate(STAGES_ORDERED[stageIdx + 1])
+  }, [hasNext, stageIdx, onNavigate])
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowLeft') navigatePrev()
+      if (e.key === 'ArrowRight') navigateNext()
     },
-    [onClose],
+    [onClose, navigatePrev, navigateNext],
   )
 
   useEffect(() => {
@@ -47,7 +63,6 @@ export function StageModal({
   const entries = dossier.pipeline_timeline.filter((t) => t.stage === stage)
   const actor = STAGE_ACTOR[stage]
   const meta = ACTOR_META[actor]
-  const stageIdx = STAGES_ORDERED.indexOf(stage)
   const gateEvents = (dossier.gate_events || []).filter((g) => {
     if (stage === 'Scoping') return g.gate === 'ConciergeToFactory'
     if (stage === 'Delivering') return g.gate === 'FactoryToCustomer'
@@ -89,6 +104,84 @@ export function StageModal({
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
+
+      {/* Left arrow */}
+      {hasPrev && (
+        <button
+          onClick={(e) => { e.stopPropagation(); navigatePrev() }}
+          style={{
+            position: 'fixed',
+            left: '16px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            background: 'rgba(12, 16, 25, 0.9)',
+            border: '1px solid rgba(0, 229, 255, 0.3)',
+            color: '#00e5ff',
+            fontSize: '20px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 101,
+            transition: 'all 0.15s ease',
+            boxShadow: '0 0 12px rgba(0, 229, 255, 0.1)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(0, 229, 255, 0.15)'
+            e.currentTarget.style.borderColor = 'rgba(0, 229, 255, 0.6)'
+            e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 229, 255, 0.25)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(12, 16, 25, 0.9)'
+            e.currentTarget.style.borderColor = 'rgba(0, 229, 255, 0.3)'
+            e.currentTarget.style.boxShadow = '0 0 12px rgba(0, 229, 255, 0.1)'
+          }}
+        >
+          ←
+        </button>
+      )}
+
+      {/* Right arrow */}
+      {hasNext && (
+        <button
+          onClick={(e) => { e.stopPropagation(); navigateNext() }}
+          style={{
+            position: 'fixed',
+            right: '16px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            background: 'rgba(12, 16, 25, 0.9)',
+            border: '1px solid rgba(0, 229, 255, 0.3)',
+            color: '#00e5ff',
+            fontSize: '20px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 101,
+            transition: 'all 0.15s ease',
+            boxShadow: '0 0 12px rgba(0, 229, 255, 0.1)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(0, 229, 255, 0.15)'
+            e.currentTarget.style.borderColor = 'rgba(0, 229, 255, 0.6)'
+            e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 229, 255, 0.25)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(12, 16, 25, 0.9)'
+            e.currentTarget.style.borderColor = 'rgba(0, 229, 255, 0.3)'
+            e.currentTarget.style.boxShadow = '0 0 12px rgba(0, 229, 255, 0.1)'
+          }}
+        >
+          →
+        </button>
+      )}
 
       <div
         onClick={(e) => e.stopPropagation()}

@@ -200,6 +200,7 @@ export function DossierView() {
           dossier={dossier}
           stage={selectedStage}
           onClose={() => setSelectedStage(null)}
+          onNavigate={(stage) => setSelectedStage(stage)}
         />
       )}
     </div>
