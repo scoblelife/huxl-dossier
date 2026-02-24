@@ -80,44 +80,63 @@ export function BeforeAfterCard({ dossier }: { dossier: Dossier }) {
                     <div
                       key={ac.id}
                       style={{
-                        display: 'flex',
+                        display: 'grid',
+                        gridTemplateColumns: '24px 1fr',
                         gap: '12px',
                         fontSize: '14px',
                         lineHeight: '1.6',
-                        color: addressed ? '#e0e8f8' : '#7a8aaa',
+                        alignItems: 'baseline',
                       }}
                     >
-                      <span style={{ color: addressed ? '#00dfa2' : '#7a8aaa', fontSize: '16px' }}>
-                        {addressed ? '✓' : '◌'}
+                      <span style={{ 
+                        width: '24px', 
+                        textAlign: 'center', 
+                        fontFamily: 'monospace',
+                        color: addressed ? '#00dfa2' : '#3a4560', 
+                        fontSize: '16px' 
+                      }}>
+                        {addressed ? '✓' : '○'}
                       </span>
-                      <span>
+                      <span style={{ color: addressed ? '#e0e8f8' : '#7a8aaa' }}>
                         <strong style={{ color: '#e0e8f8', fontWeight: 600 }}>
                           {ac.id}:
                         </strong>{' '}
-                        {ac.description}
+                        <span style={{ color: '#7a8aaa' }}>
+                          {ac.description}
+                        </span>
                       </span>
                     </div>
                   )
                 })}
                 {acs.length > 5 && (
-                  <button
-                    onClick={() => setShowAllCriteria(!showAllCriteria)}
+                  <div
                     style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#00e5ff',
-                      fontSize: '13px',
+                      display: 'grid',
+                      gridTemplateColumns: '24px 1fr',
+                      gap: '12px',
                       marginTop: '12px',
-                      paddingLeft: '28px',
-                      textDecoration: 'none',
-                      transition: 'color 0.2s ease',
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = '#00d4e6' }}
-                    onMouseLeave={(e) => { e.currentTarget.style.color = '#00e5ff' }}
                   >
-                    {showAllCriteria ? 'Show less' : `+ ${acs.length - 5} more criteria`}
-                  </button>
+                    <span></span>
+                    <button
+                      onClick={() => setShowAllCriteria(!showAllCriteria)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#00e5ff',
+                        fontSize: '13px',
+                        textDecoration: 'none',
+                        transition: 'color 0.2s ease',
+                        textAlign: 'left',
+                        padding: 0,
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = '#00d4e6' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = '#00e5ff' }}
+                    >
+                      {showAllCriteria ? 'Show less' : `+ ${acs.length - 5} more criteria`}
+                    </button>
+                  </div>
                 )}
               </div>
             </>
