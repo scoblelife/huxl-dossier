@@ -25,6 +25,8 @@ jobs:
           project: mpvz0dt7h5
           push: true
           tags: ghcr.io/scoblelife/huxl-dossier:${{ github.sha }},ghcr.io/scoblelife/huxl-dossier:latest
+        env:
+          DEPOT_TOKEN: ${{ secrets.DEPOT_TOKEN }}
 
   deploy:
     needs: build
