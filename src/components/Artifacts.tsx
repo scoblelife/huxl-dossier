@@ -59,14 +59,12 @@ function ConformanceBundle({ bundle }: { bundle: NonNullable<Dossier['conformanc
         overflow: 'hidden',
       }}
     >
-      {/* Header with key metrics */}
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
           gap: '1px',
           background: '#1c2640',
-          borderBottom: '1px solid #1c2640',
         }}
       >
         {[
@@ -81,55 +79,6 @@ function ConformanceBundle({ bundle }: { bundle: NonNullable<Dossier['conformanc
             <div style={{ fontSize: '24px', fontWeight: 800, color: stat.color }}>{stat.value}</div>
           </div>
         ))}
-      </div>
-
-      {/* Stage audit trail */}
-      <div style={{ padding: '20px 24px' }}>
-        <div style={{ fontSize: '11px', color: '#7a8aaa', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px' }}>
-          Stage Audit Trail
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {bundle.stages_completed.map((entry) => (
-            <div
-              key={entry.stage}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 16px',
-                background: '#06080e',
-                borderRadius: '6px',
-                border: '1px solid rgba(28, 38, 64, 0.5)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ color: '#00dfa2', fontSize: '14px' }}>✓</span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#e0e8f8', fontFamily: 'monospace' }}>
-                  {entry.stage}
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px' }}>
-                <span style={{ color: '#7a8aaa' }}>
-                  {entry.attempts} attempt{entry.attempts !== 1 ? 's' : ''}
-                </span>
-                {entry.gate_events > 0 && (
-                  <span
-                    style={{
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      background: 'rgba(255, 149, 0, 0.15)',
-                      color: '#ff9500',
-                    }}
-                  >
-                    {entry.gate_events} gate event{entry.gate_events !== 1 ? 's' : ''}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   )
