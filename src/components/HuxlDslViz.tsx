@@ -40,6 +40,33 @@ function parseDsl(raw: string): DslBlock[] {
   return blocks
 }
 
+/** Convert raw DSL detail lines into YAML-like format for display */
+function detailsToYaml(details: string[]): string[] {
+  return details.map((line) => {
+    // "key value" → "key: value"
+    const kvMatch = line.match(/^(\w[\w_]*)\s+(.+)$/)
+    if (kvMatch) {
+      const [, key, val] = kvMatch
+      // Nested braces like "schema { foo, bar }" → multiline yaml
+      if (val.includes('{')) {
+        const inner = val.replace(/[{}]/g, '').trim()
+        if (inner.includes(',')) {
+          const items = inner.split(',').map((s) => s.trim()).filter(Boolean)
+          return `${key}:\n${items.map((item) => `  - ${item}`).join('\n')}`
+        }
+        return `${key}: ${inner}`
+      }
+      // "key -> Type" (endpoint return type)
+      if (val.includes('->')) {
+        return `${key}: ${val.replace('->', '→').trim()}`
+      }
+      return `${key}: ${val}`
+    }
+    // Already formatted or standalone
+    return line
+  })
+}
+
 const BLOCK_STYLES: Record<DslBlock['type'], { border: string; glow: string; icon: string; label: string }> = {
   service: { border: '#00e5ff', glow: 'rgba(0, 229, 255, 0.15)', icon: '⚡', label: 'SERVICE' },
   storage: { border: '#ff9500', glow: 'rgba(255, 149, 0, 0.15)', icon: '▣', label: 'STORAGE' },
@@ -107,16 +134,18 @@ export function HuxlDslViz({ dossier }: { dossier: Dossier }) {
                       <div style={{ fontSize: '15px', fontWeight: 700, color: '#e0e8f8', marginBottom: '8px' }}>
                         {block.name}
                       </div>
-                      {block.details.slice(0, 4).map((d, i) => (
-                        <div key={i} style={{ fontSize: '12px', color: '#7a8aaa', lineHeight: '1.6', fontFamily: 'monospace' }}>
-                          {d}
-                        </div>
-                      ))}
-                      {block.details.length > 4 && (
-                        <div style={{ fontSize: '11px', color: '#546080', marginTop: '4px' }}>
-                          +{block.details.length - 4} more
-                        </div>
-                      )}
+                      <pre style={{
+                        fontSize: '11px',
+                        color: '#9ab0cc',
+                        lineHeight: '1.7',
+                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                        margin: 0,
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                      }}>
+                        {detailsToYaml(block.details).slice(0, 6).join('\n')}
+                        {block.details.length > 6 ? `\n# +${block.details.length - 6} more` : ''}
+                      </pre>
                     </div>
                     {/* Connections */}
                     {block.connections.filter((c) => blockNames.has(c)).length > 0 && (
