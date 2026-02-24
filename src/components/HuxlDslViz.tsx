@@ -1,3 +1,4 @@
+import { useState, useCallback, useEffect, useRef } from 'react'
 import type { Dossier, WallSteepness } from '~/types/dossier'
 
 interface DslBlock {
@@ -85,6 +86,7 @@ export function HuxlDslViz({ dossier }: { dossier: Dossier }) {
   const hasDsl = !!dossier.huxl_dsl
   const blocks = hasDsl ? parseDsl(dossier.huxl_dsl!) : []
   const blockNames = new Set(blocks.map((b) => b.name))
+  const [expandedBlock, setExpandedBlock] = useState<string | null>(null)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -106,66 +108,99 @@ export function HuxlDslViz({ dossier }: { dossier: Dossier }) {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
               {blocks.map((block) => {
                 const s = BLOCK_STYLES[block.type]
+                const yamlLines = detailsToYaml(block.details)
+                const hasMore = yamlLines.length > 6
+                const isExpanded = expandedBlock === block.name
                 return (
                   <div
                     key={block.name}
                     style={{
                       flex: '1 1 200px',
                       maxWidth: '300px',
-                      background: '#06080e',
-                      border: `1px solid ${s.border}50`,
-                      borderRadius: '8px',
-                      overflow: 'hidden',
-                      boxShadow: `0 0 20px ${s.glow}`,
+                      position: 'relative',
                     }}
                   >
-                    <div style={{
-                      padding: '10px 14px',
-                      borderBottom: `1px solid ${s.border}30`,
-                      background: `linear-gradient(to right, ${s.glow}, transparent)`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}>
-                      <span style={{ fontSize: '14px' }}>{s.icon}</span>
-                      <span style={{ fontSize: '10px', color: s.border, fontWeight: 700, letterSpacing: '0.1em' }}>{s.label}</span>
-                    </div>
-                    <div style={{ padding: '14px' }}>
-                      <div style={{ fontSize: '15px', fontWeight: 700, color: '#e0e8f8', marginBottom: '8px' }}>
-                        {block.name}
-                      </div>
-                      <pre style={{
-                        fontSize: '11px',
-                        color: '#9ab0cc',
-                        lineHeight: '1.7',
-                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                        margin: 0,
-                        whiteSpace: 'pre-wrap',
-                        wordBreak: 'break-word',
+                    {/* Base card */}
+                    <div
+                      style={{
+                        background: '#06080e',
+                        border: `1px solid ${s.border}50`,
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        boxShadow: `0 0 20px ${s.glow}`,
+                      }}
+                    >
+                      <div style={{
+                        padding: '10px 14px',
+                        borderBottom: `1px solid ${s.border}30`,
+                        background: `linear-gradient(to right, ${s.glow}, transparent)`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
                       }}>
-                        {detailsToYaml(block.details).slice(0, 6).join('\n')}
-                        {block.details.length > 6 ? `\n# +${block.details.length - 6} more` : ''}
-                      </pre>
-                    </div>
-                    {/* Connections */}
-                    {block.connections.filter((c) => blockNames.has(c)).length > 0 && (
-                      <div style={{ padding: '8px 14px', borderTop: `1px solid ${s.border}20`, display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        {block.connections.filter((c) => blockNames.has(c)).map((c) => (
-                          <span
-                            key={c}
-                            style={{
-                              fontSize: '10px',
-                              padding: '2px 6px',
-                              borderRadius: '3px',
-                              background: 'rgba(0, 229, 255, 0.1)',
-                              color: '#00e5ff',
-                              border: '1px solid rgba(0, 229, 255, 0.2)',
-                            }}
-                          >
-                            → {c}
-                          </span>
-                        ))}
+                        <span style={{ fontSize: '14px' }}>{s.icon}</span>
+                        <span style={{ fontSize: '10px', color: s.border, fontWeight: 700, letterSpacing: '0.1em' }}>{s.label}</span>
                       </div>
+                      <div style={{ padding: '14px' }}>
+                        <div style={{ fontSize: '15px', fontWeight: 700, color: '#e0e8f8', marginBottom: '8px' }}>
+                          {block.name}
+                        </div>
+                        <pre style={{
+                          fontSize: '11px',
+                          color: '#9ab0cc',
+                          lineHeight: '1.7',
+                          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                          margin: 0,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                        }}>
+                          {yamlLines.slice(0, 6).join('\n')}
+                        </pre>
+                        {hasMore && (
+                          <button
+                            onClick={() => setExpandedBlock(isExpanded ? null : block.name)}
+                            style={{
+                              marginTop: '6px',
+                              fontSize: '11px',
+                              color: '#00e5ff',
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              padding: 0,
+                              fontFamily: 'inherit',
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline' }}
+                            onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none' }}
+                          >
+                            +{yamlLines.length - 6} more
+                          </button>
+                        )}
+                      </div>
+                      {/* Connections */}
+                      {block.connections.filter((c) => blockNames.has(c)).length > 0 && (
+                        <div style={{ padding: '8px 14px', borderTop: `1px solid ${s.border}20`, display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {block.connections.filter((c) => blockNames.has(c)).map((c) => (
+                            <span
+                              key={c}
+                              style={{
+                                fontSize: '10px',
+                                padding: '2px 6px',
+                                borderRadius: '3px',
+                                background: 'rgba(0, 229, 255, 0.1)',
+                                color: '#00e5ff',
+                                border: '1px solid rgba(0, 229, 255, 0.2)',
+                              }}
+                            >
+                              → {c}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Popover — expanded card floating on top */}
+                    {isExpanded && (
+                      <BlockPopover block={block} style={s} yamlLines={yamlLines} onClose={() => setExpandedBlock(null)} blockNames={blockNames} />
                     )}
                   </div>
                 )
@@ -267,6 +302,129 @@ export function HuxlDslViz({ dossier }: { dossier: Dossier }) {
           })}
         </div>
       </div>
+    </div>
+  )
+}
+
+function BlockPopover({
+  block,
+  style: s,
+  yamlLines,
+  onClose,
+  blockNames,
+}: {
+  block: DslBlock
+  style: { border: string; glow: string; icon: string; label: string }
+  yamlLines: string[]
+  onClose: () => void
+  blockNames: Set<string>
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    const keyHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('keydown', keyHandler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('keydown', keyHandler)
+    }
+  }, [onClose])
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 50,
+        minWidth: '340px',
+        maxWidth: '480px',
+        background: '#06080e',
+        border: `1px solid ${s.border}`,
+        borderRadius: '10px',
+        overflow: 'hidden',
+        boxShadow: `0 0 40px ${s.glow}, 0 16px 48px rgba(0,0,0,0.7)`,
+        animation: 'popoverIn 0.15s ease-out',
+      }}
+    >
+      <style>{`
+        @keyframes popoverIn {
+          from { opacity: 0; transform: translateX(-50%) scale(0.95); }
+          to { opacity: 1; transform: translateX(-50%) scale(1); }
+        }
+      `}</style>
+      {/* Header */}
+      <div style={{
+        padding: '12px 16px',
+        borderBottom: `1px solid ${s.border}30`,
+        background: `linear-gradient(to right, ${s.glow}, transparent)`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '14px' }}>{s.icon}</span>
+          <span style={{ fontSize: '10px', color: s.border, fontWeight: 700, letterSpacing: '0.1em' }}>{s.label}</span>
+        </div>
+        <button
+          onClick={onClose}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#7a8aaa',
+            cursor: 'pointer',
+            fontSize: '16px',
+            padding: '2px 6px',
+          }}
+        >
+          ✕
+        </button>
+      </div>
+      {/* Full content */}
+      <div style={{ padding: '16px', maxHeight: '400px', overflowY: 'auto' }}>
+        <div style={{ fontSize: '17px', fontWeight: 700, color: '#e0e8f8', marginBottom: '12px' }}>
+          {block.name}
+        </div>
+        <pre style={{
+          fontSize: '12px',
+          color: '#9ab0cc',
+          lineHeight: '1.8',
+          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+          margin: 0,
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+        }}>
+          {yamlLines.join('\n')}
+        </pre>
+      </div>
+      {/* Connections */}
+      {block.connections.filter((c) => blockNames.has(c)).length > 0 && (
+        <div style={{ padding: '10px 16px', borderTop: `1px solid ${s.border}20`, display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {block.connections.filter((c) => blockNames.has(c)).map((c) => (
+            <span
+              key={c}
+              style={{
+                fontSize: '10px',
+                padding: '2px 6px',
+                borderRadius: '3px',
+                background: 'rgba(0, 229, 255, 0.1)',
+                color: '#00e5ff',
+                border: '1px solid rgba(0, 229, 255, 0.2)',
+              }}
+            >
+              → {c}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
