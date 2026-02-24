@@ -2,91 +2,134 @@ import type { Dossier } from '~/types/dossier'
 
 export function Artifacts({ dossier }: { dossier: Dossier }) {
   const { conformance_bundle, bedrock_checks, cost_verification } = dossier
-  
-  if (!conformance_bundle && !bedrock_checks && !cost_verification) {
-    return (
-      <div className="p-5 sm:p-12 text-center" style={{ background: '#0c1019', border: '1px solid #1c2640', borderRadius: '10px' }}>
-        <div className="mb-2" style={{ color: '#546080' }}>No artifacts yet</div>
-        <div className="text-sm" style={{ color: '#546080' }}>
-          Conformance bundle, bedrock checks, and cost verification will appear here when the
-          pipeline completes
-        </div>
-      </div>
-    )
+
+  if (!conformance_bundle && !bedrock_checks && !cost_verification && !dossier.artifacts.repo_url) {
+    return null
   }
-  
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
-      {/* Light zone indicator */}
-      <div className="flex items-center gap-2 text-sm">
-        <span className="px-2 py-1 rounded" style={{ background: 'rgba(26, 31, 53, 0.5)', border: '1px solid #546080', color: '#e0e8f8' }}>
-          ☀️ LIGHT ZONE - Customer Deliverables
-        </span>
-        <span style={{ color: '#546080' }}>
-          These artifacts exit the dark factory and go to the customer
-        </span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      {/* Light zone header */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px',
+          padding: '16px 24px',
+          background: 'linear-gradient(to right, rgba(255, 220, 100, 0.06), transparent)',
+          border: '1px solid rgba(255, 220, 100, 0.15)',
+          borderRadius: '10px',
+        }}
+      >
+        <div
+          style={{
+            width: '10px',
+            height: '10px',
+            borderRadius: '50%',
+            background: '#ffdc64',
+            boxShadow: '0 0 12px rgba(255, 220, 100, 0.5)',
+            flexShrink: 0,
+          }}
+        />
+        <div>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#ffdc64', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Light Zone — Customer Deliverables
+          </div>
+          <div style={{ fontSize: '12px', color: '#7a8aaa', marginTop: '2px' }}>
+            These artifacts exit the dark factory and are delivered to the customer
+          </div>
+        </div>
       </div>
 
       {conformance_bundle && <ConformanceBundle bundle={conformance_bundle} />}
-      
       {bedrock_checks && <BedrockChecks checks={bedrock_checks} />}
-      
       {cost_verification && <CostVerification verification={cost_verification} />}
-      
-      {dossier.artifacts.repo_url && (
-        <div className="p-5 sm:p-8" style={{ background: '#0c1019', border: '1px solid #1c2640', borderRadius: '10px' }}>
-          <h3 className="text-lg font-semibold mb-4" style={{ color: '#e0e8f8' }}>Repository</h3>
-          <a
-            href={dossier.artifacts.repo_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: '#00e5ff', textDecoration: 'none' }}
-            onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-            onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
-          >
-            {dossier.artifacts.repo_url}
-          </a>
-        </div>
-      )}
+      {dossier.artifacts.repo_url && <RepoLink url={dossier.artifacts.repo_url} />}
     </div>
   )
 }
 
 function ConformanceBundle({ bundle }: { bundle: NonNullable<Dossier['conformance_bundle']> }) {
   return (
-    <div className="p-5 sm:p-8" style={{ background: '#0c1019', border: '1px solid #1c2640', borderRadius: '10px' }}>
-      <h3 className="text-lg font-semibold mb-4" style={{ color: '#e0e8f8' }}>Conformance Bundle</h3>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="rounded p-4" style={{ background: '#06080e' }}>
-          <div className="text-sm mb-1" style={{ color: '#546080' }}>Total Attempts</div>
-          <div className="text-2xl font-bold" style={{ color: '#e0e8f8' }}>{bundle.total_attempts}</div>
-        </div>
-        <div className="rounded p-4" style={{ background: '#06080e' }}>
-          <div className="text-sm mb-1" style={{ color: '#546080' }}>Stages Completed</div>
-          <div className="text-2xl font-bold" style={{ color: '#e0e8f8' }}>{bundle.stages_completed.length}</div>
-        </div>
-        <div className="rounded p-4" style={{ background: '#06080e' }}>
-          <div className="text-sm mb-1" style={{ color: '#546080' }}>Total Cost</div>
-          <div className="text-2xl font-bold" style={{ color: '#00dfa2' }}>${bundle.total_cost_usd.toFixed(2)}</div>
-        </div>
-      </div>
-      
-      <div className="space-y-2">
-        <div className="text-sm font-medium mb-2" style={{ color: '#546080' }}>Stage Audit Trail</div>
-        {bundle.stages_completed.map((entry) => (
-          <div key={entry.stage} className="flex items-center justify-between rounded px-4 py-2" style={{ background: '#06080e' }}>
-            <code className="text-sm" style={{ color: '#e0e8f8' }}>{entry.stage}</code>
-            <div className="flex items-center gap-4 text-sm" style={{ color: '#546080' }}>
-              <span>{entry.attempts} attempt{entry.attempts !== 1 ? 's' : ''}</span>
-              {entry.gate_events > 0 && (
-                <span style={{ color: '#ff9500' }}>
-                  {entry.gate_events} gate event{entry.gate_events !== 1 ? 's' : ''}
-                </span>
-              )}
+    <div
+      style={{
+        background: '#0c1019',
+        border: '1px solid #1c2640',
+        borderRadius: '10px',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Header with key metrics */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '1px',
+          background: '#1c2640',
+          borderBottom: '1px solid #1c2640',
+        }}
+      >
+        {[
+          { label: 'Total Attempts', value: String(bundle.total_attempts), color: '#e0e8f8' },
+          { label: 'Stages Completed', value: String(bundle.stages_completed.length), color: '#e0e8f8' },
+          { label: 'Total Cost', value: `$${bundle.total_cost_usd.toFixed(2)}`, color: '#00dfa2' },
+        ].map((stat) => (
+          <div key={stat.label} style={{ background: '#0c1019', padding: '20px 24px', textAlign: 'center' }}>
+            <div style={{ fontSize: '10px', color: '#7a8aaa', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
+              {stat.label}
             </div>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: stat.color }}>{stat.value}</div>
           </div>
         ))}
+      </div>
+
+      {/* Stage audit trail */}
+      <div style={{ padding: '20px 24px' }}>
+        <div style={{ fontSize: '11px', color: '#7a8aaa', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px' }}>
+          Stage Audit Trail
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {bundle.stages_completed.map((entry) => (
+            <div
+              key={entry.stage}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 16px',
+                background: '#06080e',
+                borderRadius: '6px',
+                border: '1px solid rgba(28, 38, 64, 0.5)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ color: '#00dfa2', fontSize: '14px' }}>✓</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#e0e8f8', fontFamily: 'monospace' }}>
+                  {entry.stage}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px' }}>
+                <span style={{ color: '#7a8aaa' }}>
+                  {entry.attempts} attempt{entry.attempts !== 1 ? 's' : ''}
+                </span>
+                {entry.gate_events > 0 && (
+                  <span
+                    style={{
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      background: 'rgba(255, 149, 0, 0.15)',
+                      color: '#ff9500',
+                    }}
+                  >
+                    {entry.gate_events} gate event{entry.gate_events !== 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -102,36 +145,87 @@ function BedrockChecks({ checks }: { checks: NonNullable<Dossier['bedrock_checks
     { key: 'resource_bounded', label: 'Resource Bounded', value: checks.resource_bounded },
     { key: 'observability_hooks', label: 'Observability Hooks', value: checks.observability_hooks },
   ]
-  
+
   const allPassed = checkList.every((c) => c.value)
-  
+  const passedCount = checkList.filter((c) => c.value).length
+
   return (
-    <div className="p-5 sm:p-8" style={{ background: '#0c1019', border: '1px solid #1c2640', borderRadius: '10px' }}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold" style={{ color: '#e0e8f8' }}>Bedrock Checks</h3>
-        {allPassed ? (
-          <span className="px-3 py-1 rounded text-sm font-medium" style={{ background: 'rgba(0, 223, 162, 0.2)', color: '#00dfa2' }}>
-            ✓ All Passed
-          </span>
-        ) : (
-          <span className="px-3 py-1 rounded text-sm font-medium" style={{ background: 'rgba(255, 56, 56, 0.2)', color: '#ff3838' }}>
-            ✕ Some Failed
-          </span>
-        )}
+    <div
+      style={{
+        background: '#0c1019',
+        border: `1px solid ${allPassed ? 'rgba(0, 223, 162, 0.3)' : '#1c2640'}`,
+        borderRadius: '10px',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          padding: '16px 24px',
+          borderBottom: '1px solid #1c2640',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: allPassed ? 'rgba(0, 223, 162, 0.04)' : 'transparent',
+        }}
+      >
+        <div style={{ fontSize: '14px', fontWeight: 700, color: '#e0e8f8' }}>Bedrock Checks</div>
+        <div
+          style={{
+            padding: '4px 12px',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontWeight: 700,
+            background: allPassed ? 'rgba(0, 223, 162, 0.15)' : 'rgba(255, 149, 0, 0.15)',
+            color: allPassed ? '#00dfa2' : '#ff9500',
+            letterSpacing: '0.03em',
+          }}
+        >
+          {allPassed ? '✓ All Passed' : `${passedCount}/${checkList.length} Passed`}
+        </div>
       </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+      {/* Grid of checks */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+          gap: '1px',
+          background: '#1c2640',
+        }}
+      >
         {checkList.map((check) => (
           <div
             key={check.key}
-            className="flex items-center gap-3 p-3 rounded"
             style={{
-              background: check.value ? 'rgba(0, 223, 162, 0.1)' : 'rgba(255, 56, 56, 0.1)',
-              border: `1px solid ${check.value ? 'rgba(0, 223, 162, 0.3)' : 'rgba(255, 56, 56, 0.3)'}`
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '14px 20px',
+              background: '#0c1019',
             }}
           >
-            <div className="text-2xl">{check.value ? '🟢' : '🔴'}</div>
-            <div className="text-sm font-medium" style={{ color: '#e0e8f8' }}>{check.label}</div>
+            <div
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '13px',
+                fontWeight: 700,
+                flexShrink: 0,
+                background: check.value ? 'rgba(0, 223, 162, 0.15)' : 'rgba(255, 56, 56, 0.15)',
+                border: `1px solid ${check.value ? 'rgba(0, 223, 162, 0.4)' : 'rgba(255, 56, 56, 0.4)'}`,
+                color: check.value ? '#00dfa2' : '#ff3838',
+              }}
+            >
+              {check.value ? '✓' : '✕'}
+            </div>
+            <span style={{ fontSize: '13px', fontWeight: 500, color: '#e0e8f8' }}>
+              {check.label}
+            </span>
           </div>
         ))}
       </div>
@@ -139,83 +233,217 @@ function BedrockChecks({ checks }: { checks: NonNullable<Dossier['bedrock_checks
   )
 }
 
-function CostVerification({
-  verification,
-}: {
-  verification: NonNullable<Dossier['cost_verification']>
-}) {
+function CostVerification({ verification }: { verification: NonNullable<Dossier['cost_verification']> }) {
   return (
-    <div className="p-5 sm:p-8" style={{ background: '#0c1019', border: '1px solid #1c2640', borderRadius: '10px' }}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold" style={{ color: '#e0e8f8' }}>Cost Verification</h3>
-        {verification.within_budget ? (
-          <span className="px-3 py-1 rounded text-sm font-medium" style={{ background: 'rgba(0, 223, 162, 0.2)', color: '#00dfa2' }}>
-            ✓ Within Budget
-          </span>
-        ) : (
-          <span className="px-3 py-1 rounded text-sm font-medium" style={{ background: 'rgba(255, 56, 56, 0.2)', color: '#ff3838' }}>
-            ✕ Over Budget
-          </span>
-        )}
+    <div
+      style={{
+        background: '#0c1019',
+        border: `1px solid ${verification.within_budget ? 'rgba(0, 223, 162, 0.3)' : 'rgba(255, 56, 56, 0.3)'}`,
+        borderRadius: '10px',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          padding: '16px 24px',
+          borderBottom: '1px solid #1c2640',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: verification.within_budget ? 'rgba(0, 223, 162, 0.04)' : 'rgba(255, 56, 56, 0.04)',
+        }}
+      >
+        <div style={{ fontSize: '14px', fontWeight: 700, color: '#e0e8f8' }}>Cost Verification</div>
+        <div
+          style={{
+            padding: '4px 12px',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontWeight: 700,
+            background: verification.within_budget ? 'rgba(0, 223, 162, 0.15)' : 'rgba(255, 56, 56, 0.15)',
+            color: verification.within_budget ? '#00dfa2' : '#ff3838',
+          }}
+        >
+          {verification.within_budget ? '✓ Within Budget' : '✕ Over Budget'}
+        </div>
       </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div className="rounded p-4" style={{ background: '#06080e' }}>
-          <div className="text-sm mb-1" style={{ color: '#546080' }}>Estimated Monthly Cycles</div>
-          <div className="text-2xl font-bold" style={{ color: '#e0e8f8' }}>
+
+      {/* Key metrics */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: verification.measured_cycles_per_unit !== null ? '1fr 1fr' : '1fr',
+          gap: '1px',
+          background: '#1c2640',
+          borderBottom: '1px solid #1c2640',
+        }}
+      >
+        <div style={{ background: '#0c1019', padding: '20px 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: '10px', color: '#7a8aaa', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
+            Estimated Monthly Cycles
+          </div>
+          <div style={{ fontSize: '22px', fontWeight: 800, color: '#e0e8f8' }}>
             {verification.estimated_monthly_cycles_t.toFixed(2)}T
           </div>
         </div>
         {verification.measured_cycles_per_unit !== null && (
-          <div className="rounded p-4" style={{ background: '#06080e' }}>
-            <div className="text-sm mb-1" style={{ color: '#546080' }}>Cycles Per Unit</div>
-            <div className="text-2xl font-bold" style={{ color: '#e0e8f8' }}>
+          <div style={{ background: '#0c1019', padding: '20px 24px', textAlign: 'center' }}>
+            <div style={{ fontSize: '10px', color: '#7a8aaa', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>
+              Cycles Per Unit
+            </div>
+            <div style={{ fontSize: '22px', fontWeight: 800, color: '#e0e8f8' }}>
               {verification.measured_cycles_per_unit.toLocaleString()}
             </div>
           </div>
         )}
       </div>
-      
-      {verification.component_costs.length > 0 && (
-        <div className="mb-6">
-          <div className="text-sm font-medium mb-2" style={{ color: '#546080' }}>Component Breakdown</div>
-          <div className="space-y-2">
-            {verification.component_costs.map((component, idx) => (
-              <div key={idx} className="flex items-center justify-between rounded px-4 py-2" style={{ background: '#06080e' }}>
-                <div className="flex items-center gap-3">
-                  <span
-                    className="px-2 py-0.5 rounded text-xs font-medium"
-                    style={{
-                      background: component.tier === 1 ? 'rgba(255, 56, 56, 0.2)' : component.tier === 2 ? 'rgba(255, 149, 0, 0.2)' : 'rgba(84, 96, 128, 0.2)',
-                      color: component.tier === 1 ? '#ff3838' : component.tier === 2 ? '#ff9500' : '#546080'
-                    }}
-                  >
-                    Tier {component.tier}
+
+      <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* Component breakdown */}
+        {verification.component_costs.length > 0 && (
+          <div>
+            <div style={{ fontSize: '11px', color: '#7a8aaa', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px' }}>
+              Component Breakdown
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {verification.component_costs.map((component, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 16px',
+                    background: '#06080e',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(28, 38, 64, 0.5)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span
+                      style={{
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        background:
+                          component.tier === 1 ? 'rgba(255, 56, 56, 0.15)' :
+                          component.tier === 2 ? 'rgba(255, 149, 0, 0.15)' :
+                          'rgba(84, 96, 128, 0.15)',
+                        color:
+                          component.tier === 1 ? '#ff3838' :
+                          component.tier === 2 ? '#ff9500' :
+                          '#7a8aaa',
+                      }}
+                    >
+                      T{component.tier}
+                    </span>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#e0e8f8', fontFamily: 'monospace' }}>
+                      {component.name}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '13px', color: '#7a8aaa', fontFamily: 'monospace' }}>
+                    {(component.estimated_monthly_cycles / 1_000_000_000_000).toFixed(4)}T
                   </span>
-                  <code className="text-sm" style={{ color: '#e0e8f8' }}>{component.name}</code>
                 </div>
-                <div className="text-sm" style={{ color: '#546080' }}>
-                  {(component.estimated_monthly_cycles / 1_000_000_000_000).toFixed(3)}T
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+        )}
+
+        {/* Optimizations */}
+        {verification.optimizations_applied.length > 0 && (
+          <div>
+            <div style={{ fontSize: '11px', color: '#7a8aaa', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px' }}>
+              Optimizations Applied
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {verification.optimizations_applied.map((opt, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '10px',
+                    padding: '8px 12px',
+                    fontSize: '13px',
+                    color: '#e0e8f8',
+                    lineHeight: '1.5',
+                  }}
+                >
+                  <span style={{ color: '#00dfa2', fontWeight: 700, flexShrink: 0 }}>▸</span>
+                  <span>{opt}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function RepoLink({ url }: { url: string }) {
+  return (
+    <div
+      style={{
+        background: '#0c1019',
+        border: '1px solid rgba(0, 229, 255, 0.2)',
+        borderRadius: '10px',
+        padding: '20px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}
+    >
+      <div>
+        <div style={{ fontSize: '11px', color: '#7a8aaa', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>
+          Repository
         </div>
-      )}
-      
-      {verification.optimizations_applied.length > 0 && (
-        <div>
-          <div className="text-sm font-medium mb-2" style={{ color: '#546080' }}>Optimizations Applied</div>
-          <ul className="space-y-1">
-            {verification.optimizations_applied.map((opt, idx) => (
-              <li key={idx} className="text-sm flex items-start gap-2" style={{ color: '#e0e8f8' }}>
-                <span style={{ color: '#00dfa2' }}>•</span>
-                <span>{opt}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            color: '#00e5ff',
+            textDecoration: 'none',
+            fontSize: '14px',
+            fontFamily: 'monospace',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline' }}
+          onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none' }}
+        >
+          {url}
+        </a>
+      </div>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          padding: '8px 16px',
+          borderRadius: '6px',
+          background: 'rgba(0, 229, 255, 0.1)',
+          border: '1px solid rgba(0, 229, 255, 0.3)',
+          color: '#00e5ff',
+          fontSize: '12px',
+          fontWeight: 700,
+          textDecoration: 'none',
+          letterSpacing: '0.05em',
+          transition: 'all 0.15s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(0, 229, 255, 0.2)'
+          e.currentTarget.style.borderColor = 'rgba(0, 229, 255, 0.6)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(0, 229, 255, 0.1)'
+          e.currentTarget.style.borderColor = 'rgba(0, 229, 255, 0.3)'
+        }}
+      >
+        OPEN →
+      </a>
     </div>
   )
 }
