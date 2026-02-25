@@ -1,5 +1,5 @@
 import { createRootRoute, createRoute, Outlet } from '@tanstack/react-router'
-import { lazy } from 'react'
+import { lazy, Suspense } from 'react'
 import { DossierList } from './pages/DossierList'
 import { DossierView } from './pages/DossierView'
 
@@ -17,7 +17,11 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: DossierList,
+  component: () => (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen text-muted">Loading…</div>}>
+      <ConciergeView />
+    </Suspense>
+  ),
 })
 
 const dossierRoute = createRoute({
